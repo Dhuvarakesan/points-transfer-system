@@ -82,7 +82,7 @@ const AdminDashboard = () => {
     name: "",
     email: "",
     role: "user" as "admin" | "user",
-    points: 0,
+    points_balance: 0,
     status: "active" as "active" | "inactive",
     password: "", // Add password field
   });
@@ -114,7 +114,7 @@ const AdminDashboard = () => {
         name: "",
         email: "",
         role: "user",
-        points: 0,
+        points_balance: 0,
         status: "active",
         password: "",
       });
@@ -315,11 +315,11 @@ const AdminDashboard = () => {
                         id="points"
                         type="number"
                         placeholder="0"
-                        value={newUser.points}
+                        value={newUser.points_balance}
                         onChange={(e) =>
                           setNewUser({
                             ...newUser,
-                            points: Number(e.target.value),
+                            points_balance: Number(e.target.value),
                           })
                         }
                       />
@@ -429,12 +429,19 @@ const AdminDashboard = () => {
               <Input
                 placeholder="Search sender or receiver..."
                 value={transactionFilter.search}
-                onChange={e => setTransactionFilter(f => ({ ...f, search: e.target.value }))}
+                onChange={(e) =>
+                  setTransactionFilter((f) => ({
+                    ...f,
+                    search: e.target.value,
+                  }))
+                }
                 className="md:w-1/3"
               />
               <Select
                 value={transactionFilter.status}
-                onValueChange={val => setTransactionFilter(f => ({ ...f, status: val }))}
+                onValueChange={(val) =>
+                  setTransactionFilter((f) => ({ ...f, status: val }))
+                }
               >
                 <SelectTrigger className="md:w-1/4">
                   <SelectValue placeholder="Status" />
@@ -476,17 +483,21 @@ const AdminDashboard = () => {
                 </TableHeader>
                 <TableBody>
                   {transactions
-                    .filter(t => {
+                    .filter((t) => {
                       const search = transactionFilter.search.toLowerCase();
                       const matchesSearch =
                         t.senderName?.toLowerCase().includes(search) ||
                         t.receiverName?.toLowerCase().includes(search);
                       const matchesStatus =
-                        transactionFilter.status === 'all' ||
+                        transactionFilter.status === "all" ||
                         t.status === transactionFilter.status;
                       const txDate = t.timestamp ? new Date(t.timestamp) : null;
-                      const startDate = transactionFilter.startDate ? new Date(transactionFilter.startDate) : null;
-                      const endDate = transactionFilter.endDate ? new Date(transactionFilter.endDate) : null;
+                      const startDate = transactionFilter.startDate
+                        ? new Date(transactionFilter.startDate)
+                        : null;
+                      const endDate = transactionFilter.endDate
+                        ? new Date(transactionFilter.endDate)
+                        : null;
                       const matchesDate =
                         (!startDate || (txDate && txDate >= startDate)) &&
                         (!endDate || (txDate && txDate <= endDate));

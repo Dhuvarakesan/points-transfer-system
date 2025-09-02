@@ -72,7 +72,7 @@ const UserDashboard = () => {
       return;
     }
 
-    if (transfer.amount > user.points) {
+    if (transfer.amount > user.points_balance) {
       toast({ title: 'Error', description: 'Insufficient balance', variant: 'destructive' });
       return;
     }
@@ -91,12 +91,18 @@ const UserDashboard = () => {
           amount: transfer.amount,
         })
       );
-      dispatch(updateUserPoints(user.points - transfer.amount));
-      dispatch(updateOtherUserPoints({ userId: receiver._id, points: receiver.points + transfer.amount }));
+      dispatch(updateUserPoints(user.points_balance - transfer.amount));
+      dispatch(
+        updateOtherUserPoints({
+          userId: receiver._id,
+          points_balance: receiver.points_balance + transfer.amount,
+        })
+      );
       setIsTransferDialogOpen(false);
       setTransfer({ receiverId: '', amount: 0 });
       toast({ title: 'Success', description: `Successfully transferred ${transfer.amount} points to ${receiver.name}`, variant: 'default' });
     } catch (error) {
+      console.log('error:',error)
       toast({ title: 'Error', description: 'Transfer failed', variant: 'destructive' });
     }
   };
@@ -132,7 +138,7 @@ const UserDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white/80 text-sm font-medium mb-2">Current Balance</p>
-                <p className="text-4xl font-bold mb-4">{user?.points?.toLocaleString() || 0} Points</p>
+                <p className="text-4xl font-bold mb-4">{user.points_balance?.toLocaleString() || 0} Points</p>
                 <div className="flex items-center space-x-4 text-sm text-white/80">
                   <span className="flex items-center">
                     <ArrowUpRight className="w-4 h-4 mr-1" />
@@ -171,7 +177,7 @@ const UserDashboard = () => {
                               <SelectItem key={u._id} value={u._id}>
                                 <div className="flex items-center space-x-2">
                                   <span>{u.name}</span>
-                                  <span className="text-muted-foreground text-sm">({u.points} points)</span>
+                                  <span className="text-muted-foreground text-sm">({u.points_balance} points_balance)</span>
                                 </div>
                               </SelectItem>
                             ))}
@@ -185,12 +191,12 @@ const UserDashboard = () => {
                           type="number"
                           placeholder="Enter amount"
                           min="1"
-                          max={user?.points || 0}
+                          max={user?.points_balance || 0}
                           value={transfer.amount || ''}
                           onChange={(e) => setTransfer({ ...transfer, amount: Number(e.target.value) })}
                         />
                         <p className="text-xs text-muted-foreground">
-                          Available balance: {user?.points?.toLocaleString() || 0} points
+                          Available balance: {user?.points_balance?.toLocaleString() || 0} points
                         </p>
                       </div>
                       <Button 

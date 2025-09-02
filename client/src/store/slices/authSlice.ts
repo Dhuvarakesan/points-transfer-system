@@ -10,7 +10,7 @@ interface User {
   email: string;
   password:string;
   role: 'admin' | 'user';
-  points: number;
+  points_balance: number;
   status: 'active' | 'inactive';
 }
 
@@ -79,7 +79,7 @@ const authSlice = createSlice({
     },
     updateUserPoints: (state, action: PayloadAction<number>) => {
       if (state.user) {
-        state.user.points = action.payload;
+        state.user.points_balance = action.payload;
       }
     },
   },

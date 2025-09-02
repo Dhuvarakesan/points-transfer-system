@@ -1,4 +1,3 @@
-
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { getAllTransactions, getUserTransactionHistory, transferPoints as transferPointsAPI } from '../../api';
 export const fetchAllTransactions = createAsyncThunk(
@@ -57,8 +56,8 @@ export const fetchTransactions = createAsyncThunk(
   async (id:string) => {
     const response = await getUserTransactionHistory(id);
     return {
-      transactions: response.data,
-      total: response.data.length,
+      transactions: response.data.data,
+      total: response.data.data.length,
     };
   }
 );
@@ -82,6 +81,9 @@ const transactionsSlice = createSlice({
       })
       .addCase(transferPoints.fulfilled, (state, action) => {
         state.isLoading = false;
+        if (!Array.isArray(state.transactions)) {
+          state.transactions = [];
+        }
         state.transactions.unshift(action.payload);
         state.totalTransactions += 1;
       })

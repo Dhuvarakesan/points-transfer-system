@@ -4,7 +4,7 @@ import User from '../models/users.model';
 
 const createUser = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role, status = 'active', points = 0 } = req.body;
+    const { name, email, password, role, status = 'active', points_balance = 0 } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -17,7 +17,7 @@ const createUser = async (req: Request, res: Response) => {
       password, // Assume password is already hashed
       role,
       status,
-      points,
+      points_balance,
     });
 
     const userObj = newUser.toJSON();
@@ -57,8 +57,27 @@ const deleteUser = async (req: Request, res: Response) => {
 // Get all transactions for admin
 const getAllTransactions = async (req: Request, res: Response) => {
   try {
-    const transactions = await Transaction.find().populate('sender_id receiver_id');
-    res.status(200).json({ success: true, message: 'Transactions fetched successfully.', data: transactions });
+    const transactions = await Transaction.find();
+
+    const formattedTransactions = await Promise.all(
+      transactions.map(async (transaction) => {
+        const sender = await User.findById(transaction.sender_id);
+        const receiver = await User.findById(transaction.receiver_id);
+
+        return {
+          _id: transaction._id,
+          senderId: transaction.sender_id,
+          senderName: sender ? sender.name : 'Unknown',
+          receiverId: transaction.receiver_id,
+          receiverName: receiver ? receiver.name : 'Unknown',
+          amount: transaction.amount,
+          timestamp: transaction.createdAt,
+          status: transaction.status,
+        };
+      })
+    );
+
+    res.status(200).json({ success: true, message: 'Transactions fetched successfully.', data: formattedTransactions });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Internal server error', error });
   }

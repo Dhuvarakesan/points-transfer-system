@@ -9,7 +9,7 @@ interface User {
   password:string;
 
   role: 'admin' | 'user';
-  points: number;
+  points_balance: number;
   status: 'active' | 'inactive';
   createdAt: string;
 }
@@ -79,10 +79,10 @@ const usersSlice = createSlice({
     setCurrentPage: (state, action: PayloadAction<number>) => {
       state.currentPage = action.payload;
     },
-    updateUserPoints: (state, action: PayloadAction<{ userId: string; points: number }>) => {
+    updateUserPoints: (state, action: PayloadAction<{ userId: string; points_balance: number }>) => {
   const user = state.users.find(u => u._id === action.payload.userId);
       if (user) {
-        user.points = action.payload.points;
+        user.points_balance = action.payload.points_balance;
       }
     },
   },

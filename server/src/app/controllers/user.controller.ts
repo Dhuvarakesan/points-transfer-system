@@ -13,8 +13,27 @@ const getUserTransactionHistory = async (req: Request, res: Response) => {
         { sender_id: userId },
         { receiver_id: userId }
       ]
-    }).populate('sender_id receiver_id');
-    res.status(200).json({ success: true, message: 'User transactions fetched successfully.', data: transactions });
+    });
+
+    const formattedTransactions = await Promise.all(
+      transactions.map(async (transaction) => {
+        const sender = await User.findById(transaction.sender_id);
+        const receiver = await User.findById(transaction.receiver_id);
+
+        return {
+          _id: transaction._id,
+          senderId: transaction.sender_id,
+          senderName: sender ? sender.name : 'Unknown',
+          receiverId: transaction.receiver_id,
+          receiverName: receiver ? receiver.name : 'Unknown',
+          amount: transaction.amount,
+          timestamp: transaction.createdAt,
+          status: transaction.status,
+        };
+      })
+    );
+
+    res.status(200).json({ success: true, message: 'User transactions fetched successfully.', data: formattedTransactions });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Internal server error', error });
   }
@@ -63,8 +82,34 @@ const transferPoints = async (req: Request, res: Response) => {
     await sender.save();
     await receiver.save();
 
-    res.status(200).json({ success: true, message: 'Points transferred successfully.' });
+    // Create a transaction record
+    const transaction = new Transaction({
+      sender_id: sender._id,
+      receiver_id: receiver._id,
+      amount,
+      status: 'success',
+      createdAt: new Date(),
+    });
+
+    await transaction.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Points transferred successfully.',
+      transaction,
+    });
   } catch (error) {
+    // Handle failure case
+    const transaction = new Transaction({
+      sender_id: req.body._id,
+      receiver_id: req.body.receiverId,
+      amount: req.body.amount,
+      status: 'failed',
+      createdAt: new Date(),
+    });
+
+    await transaction.save();
+
     res.status(500).json({ success: false, message: 'Internal server error', error });
   }
 };
