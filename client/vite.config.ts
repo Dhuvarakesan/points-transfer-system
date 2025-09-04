@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "::",
       port: 8080,
-      allowedHosts: ["inventory-management-w551.onrender.com"],
+      allowedHosts: ["points-transfer-system.onrender.com"],
       proxy: {
         "/api": {
           target: env.VITE_SERVER_BASE_URL,
