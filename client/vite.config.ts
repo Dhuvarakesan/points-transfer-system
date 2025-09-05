@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "::",
       port: 8080,
-      allowedHosts: env.VITE_ALLOWED_HOSTS ? env.VITE_ALLOWED_HOSTS.split(",").map(host => host.trim()) : [],
+      allowedHosts: ['pointshare.onrender.com'],
       proxy: {
         "/api": {
           target: env.VITE_SERVER_BASE_URL,
