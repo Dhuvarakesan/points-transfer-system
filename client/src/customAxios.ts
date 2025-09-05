@@ -25,7 +25,7 @@ customAxios.interceptors.request.use(
         }
 
         // Debug log for headers
-        console.log('Request Headers:', config.headers);
+        // console.log('Request Headers:', config.headers);
 
         return config;
     },

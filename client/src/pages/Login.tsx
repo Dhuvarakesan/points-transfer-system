@@ -1,19 +1,26 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { AppDispatch, RootState } from '@/store';
-import { clearError, loginUser } from '@/store/slices/authSlice';
-import { CreditCard, Loader2, Shield, Users } from 'lucide-react';
-import React, { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AppDispatch, RootState } from "@/store";
+import { clearError, loginUser } from "@/store/slices/authSlice";
+import { CreditCard, Eye, EyeOff, Loader2, Shield, Users } from "lucide-react";
+import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [showPassword, setShowPassword] = useState(true);
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
 
@@ -36,10 +43,8 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailError && !passwordError) {
-      dispatch(clearError());
-      await dispatch(loginUser({ email, password }));
-    }
+    dispatch(clearError());
+    await dispatch(loginUser({ email, password }));
   };
 
   const demoCredentials = [
@@ -67,8 +72,12 @@ const Login = () => {
               <CreditCard className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Point Transfer App</h1>
-          <p className="text-muted-foreground">Secure point transfers made simple</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Point Transfer App
+          </h1>
+          <p className="text-muted-foreground">
+            Secure point transfers made simple
+          </p>
         </div>
 
         {/* Login Form */}
@@ -99,19 +108,31 @@ const Login = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    // validatePassword(e.target.value);
-                  }}
-                  required
-                  disabled={isLoading}
-                />
-                {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {error && (
@@ -120,9 +141,9 @@ const Login = () => {
                 </Alert>
               )}
 
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 variant="gradientHero"
                 disabled={isLoading || !!emailError || !!passwordError}
               >
@@ -132,7 +153,7 @@ const Login = () => {
                     Signing In...
                   </>
                 ) : (
-                  'Sign In'
+                  "Sign In"
                 )}
               </Button>
             </form>
@@ -149,7 +170,7 @@ const Login = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             {demoCredentials.map((cred) => (
-              <div 
+              <div
                 key={cred.email}
                 className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-fast"
                 onClick={() => {
@@ -163,7 +184,9 @@ const Login = () => {
                   <cred.icon className="w-5 h-5 text-primary" />
                   <div>
                     <p className="font-medium text-sm">{cred.label}</p>
-                    <p className="text-xs text-muted-foreground">{cred.email}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {cred.email}
+                    </p>
                   </div>
                 </div>
                 <Button variant="ghost" size="sm">
