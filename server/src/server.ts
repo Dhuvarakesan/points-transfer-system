@@ -50,7 +50,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 // for http localhost without certificate
 app.listen(port, () => {
   console.log(`
-    🎉 **Welcome to the Points Transfer System Server!** 🎉
+    🎉 **Welcome to the Point Share Server!** 🎉
     --------------------------------------------
     🚀 **Status**: Server is up and running smoothly!`)
   });    
