@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
+import axios, { AxiosError } from 'axios';
 import { createUser as createUserAPI, deleteUser as deleteUserAPI, editUser, listUsers } from '../../api';
 
 interface User {
@@ -49,6 +49,13 @@ export const createUser = createAsyncThunk(
       }
       return rejectWithValue({ success: false, message: 'Failed to create user' });
     }
+  }
+);
+export const addPointsToUser = createAsyncThunk(
+  'users/addPoints',
+  async ({ userId, points }: { userId: string; points: number }) => {
+    const response = await axios.post('/admin/users/add-points', { userId, points });
+    return response.data.data;
   }
 );
 
@@ -117,6 +124,20 @@ const usersSlice = createSlice({
           state.users = state.users.filter(u => u._id !== action.payload.data._id);
           state.totalUsers -= 1;
         }
+      })
+      .addCase(addPointsToUser.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(addPointsToUser.fulfilled, (state, action) => {
+        const { userId, points } = action.payload;
+        const user = state.users.find(u => u._id === userId);
+        if (user) {
+          user.points_balance += points;
+        }
+        state.isLoading = false;
+      })
+      .addCase(addPointsToUser.rejected, (state) => {
+        state.isLoading = false;
       });
   },
 });

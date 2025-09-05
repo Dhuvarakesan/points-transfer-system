@@ -1,3 +1,14 @@
+import CelebrationAnimation from "@/components/CelebrationAnimation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,14 +48,16 @@ import { AppDispatch, RootState } from "@/store";
 import { logoutUser } from "@/store/slices/authSlice";
 import { fetchAllTransactions } from "@/store/slices/transactionsSlice";
 import {
+  addPointsToUser,
   createUser,
   deleteUser,
   fetchUsers,
-  setSearchTerm,
+  setSearchTerm
 } from "@/store/slices/usersSlice";
 import { User } from "@/types/user";
 import {
   Activity,
+  Coins,
   CreditCard,
   Edit3,
   LogOut,
@@ -52,7 +65,7 @@ import {
   Search,
   Shield,
   Trash2,
-  Users,
+  Users
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -78,6 +91,13 @@ const AdminDashboard = () => {
   const transactions = Array.isArray(transactionsFromState) ? transactionsFromState : [];
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isAddPointsDialogOpen, setIsAddPointsDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [pointsToAdd, setPointsToAdd] = useState(0);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationPoints, setCelebrationPoints] = useState(0);
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
@@ -129,16 +149,53 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      const result = await dispatch(deleteUser(userId));
-      if (deleteUser.fulfilled.match(result) && result.payload.success) {
-        toast({ title: "Success", description: result.payload.message });
-      } else {
-        const errorMsg = result.payload?.message || "Failed to delete user";
+  const handleDeleteUser = async () => {
+    if (userToDelete) {
+      try {
+        await dispatch(deleteUser(userToDelete));
+        toast({ title: "Success", description: "User deleted successfully" });
+      } catch (error) {
         toast({
           title: "Error",
-          description: errorMsg,
+          description: "Failed to delete user",
+          variant: "destructive",
+        });
+      }
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const openDeleteDialog = (userId: string) => {
+    setUserToDelete(userId);
+    setDeleteDialogOpen(true);
+  };
+
+  const openAddPointsDialog = (user) => {
+    setSelectedUser(user);
+    setPointsToAdd(0);
+    setIsAddPointsDialogOpen(true);
+  };
+
+  const handleAddPoints = async () => {
+    if (selectedUser && pointsToAdd > 0) {
+      try {
+        await dispatch(
+          addPointsToUser({ userId: selectedUser.id, points: pointsToAdd })
+        );
+        setIsAddPointsDialogOpen(false);
+        setCelebrationPoints(pointsToAdd);
+        setShowCelebration(true);
+        toast({
+          title: "Success",
+          description: `Added ${pointsToAdd} points to ${selectedUser.name}`,
+        });
+        setSelectedUser(null);
+        setPointsToAdd(0);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to add points",
           variant: "destructive",
         });
       }
@@ -244,7 +301,10 @@ const AdminDashboard = () => {
                 onOpenChange={setIsCreateDialogOpen}
               >
                 <DialogTrigger asChild>
-                  <Button variant="gradient">
+                  <Button
+                    variant="gradient"
+                    className="hover:opacity-80 transition-smooth"
+                  >
                     <Plus className="w-4 h-4" />
                     Create User
                   </Button>
@@ -382,7 +442,7 @@ const AdminDashboard = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {(user.points ?? 0).toLocaleString()}
+                        {(user?.points_balance ?? 0).toLocaleString()}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -395,13 +455,21 @@ const AdminDashboard = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openAddPointsDialog(user)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <Coins className="w-4 h-4" />
+                          </Button>
                           <Button variant="ghost" size="sm">
                             <Edit3 className="w-4 h-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteUser(user._id)}
+                            onClick={() => openDeleteDialog(user._id)}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -415,7 +483,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Recent Transactions with filter */}
+        {/* Recent Transactions */}
         <Card className="shadow-medium">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -535,6 +603,93 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Points Dialog */}
+      <Dialog
+        open={isAddPointsDialogOpen}
+        onOpenChange={setIsAddPointsDialogOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Points to User</DialogTitle>
+            <DialogDescription>
+              Add points to {selectedUser?.name}'s account
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-muted/30 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  Current Balance:
+                </span>
+                <span className="font-medium">
+                  {selectedUser?.points?.toLocaleString()} points
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="points">Points to Add</Label>
+              <Input
+                id="points"
+                type="number"
+                placeholder="Enter points amount"
+                value={pointsToAdd}
+                onChange={(e) => setPointsToAdd(Number(e.target.value))}
+                min="1"
+              />
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setIsAddPointsDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddPoints}
+                className="flex-1"
+                variant="gradient"
+                disabled={pointsToAdd <= 0}
+              >
+                <Coins className="w-4 h-4 mr-2" />
+                Add Points
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              user account and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setUserToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteUser}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Celebration Animation */}
+      <CelebrationAnimation
+        isVisible={showCelebration}
+        onComplete={() => setShowCelebration(false)}
+        pointsAdded={celebrationPoints}
+      />
     </div>
   );
 };

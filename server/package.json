@@ -1,7 +1,7 @@
 {
-  "name": "inventory_management_server",
+  "name": "point-share-server",
   "version": "1.0",
-  "description": "",
+  "description": "Point Share Application",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
