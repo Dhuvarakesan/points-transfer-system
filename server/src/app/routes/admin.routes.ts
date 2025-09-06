@@ -1,6 +1,6 @@
 import express from 'express';
 import { createUser, deleteUser, getAllTransactions, listUsers, updateUser } from '../controllers/admin.controller';
-import { addPointsToUser } from '../controllers/points.controller';
+import { addNOXToUser } from '../controllers/points.controller';
 
 const router = express.Router();
 
@@ -13,7 +13,7 @@ router.put('/users/:id', updateUser);
 // Admin: Get all transactions
 router.get('/transactions', getAllTransactions);
 
-// Add points to a user
-router.post('/users/add-points', addPointsToUser);
+// Add NOX to a user
+router.post('/users/add-nox', addNOXToUser);
 
 export default router;

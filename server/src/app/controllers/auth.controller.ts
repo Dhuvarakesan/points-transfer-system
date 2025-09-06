@@ -1,3 +1,4 @@
+import { secretKey } from 'config/config';
 import CryptoJS from 'crypto-js';
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
@@ -48,9 +49,13 @@ const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role }, 'your_jwt_secret', {
+    const token = jwt.sign({ id: user.id, role: user.role }, secretKey, {
       expiresIn: '1h',
     });
+
+    // Store the latest token in the database
+    user.latestToken = token;
+    await user.save();
 
     res.status(200).json({ token });
   } catch (error) {

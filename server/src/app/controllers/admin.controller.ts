@@ -10,7 +10,7 @@ const DEFAULT_PROTECTED_EMAILS = [
 
 const createUser = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role, status = 'active', points_balance = 0 } = req.body;
+    const { name, email, password, role, status = 'active', nox_balance = 0 } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -23,7 +23,7 @@ const createUser = async (req: Request, res: Response) => {
       password, // Assume password is already hashed
       role,
       status,
-      points_balance,
+      nox_balance,
     });
 
     const userObj = newUser.toJSON();

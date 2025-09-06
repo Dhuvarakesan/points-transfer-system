@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AxiosError } from 'axios';
-import { addPoints, createUser as createUserAPI, deleteUser as deleteUserAPI, editUser, listUsers } from '../../api';
+import { addPoints, createUser as createUserAPI, deleteUser as deleteUserAPI, editUser, getUserPoints, listUsers } from '../../api';
 
 interface User {
   _id: string; // Make _id mandatory
@@ -9,7 +9,7 @@ interface User {
   password:string;
 
   role: 'admin' | 'user';
-  points_balance: number;
+  nox_balance: number;
   status: 'active' | 'inactive';
   createdAt: string;
 }
@@ -21,6 +21,9 @@ interface UsersState {
   searchTerm: string;
   currentPage: number;
   totalUsers: number;
+  lastPolledBalance?: number | null;
+  showBalanceAnimation?: boolean;
+  balanceChangeType?: 'credit' | 'debit';
 }
 
 const initialState: UsersState = {
@@ -30,8 +33,20 @@ const initialState: UsersState = {
   searchTerm: '',
   currentPage: 1,
   totalUsers: 4,
+  lastPolledBalance: null,
+  showBalanceAnimation: false,
+  balanceChangeType: undefined,
 };
+     
 
+
+export const fetchUserPoints = createAsyncThunk(
+  'users/fetchUserPoints',
+  async (userId: string) => {
+    const response = await getUserPoints(userId);
+    return response.data.nox_balance;
+  }
+);
 export const fetchUsers = createAsyncThunk('users/fetchUsers', async (params: { page?: number; search?: string } = {}) => {
   const response = await listUsers(params);
   return response.data;
@@ -86,15 +101,25 @@ const usersSlice = createSlice({
     setCurrentPage: (state, action: PayloadAction<number>) => {
       state.currentPage = action.payload;
     },
-    updateUserPoints: (state, action: PayloadAction<{ userId: string; points_balance: number }>) => {
+    updateUserPoints: (state, action: PayloadAction<{ userId: string; nox_balance: number }>) => {
   const user = state.users.find(u => u._id === action.payload.userId);
       if (user) {
-        user.points_balance = action.payload.points_balance;
+        user.nox_balance = action.payload.nox_balance;
       }
     },
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchUserPoints.fulfilled, (state, action) => {
+        if (state.lastPolledBalance !== null && action.payload !== state.lastPolledBalance) {
+          state.showBalanceAnimation = true;
+          state.balanceChangeType = action.payload > state.lastPolledBalance ? 'credit' : 'debit';
+        } else {
+          state.showBalanceAnimation = false;
+          state.balanceChangeType = undefined;
+        }
+        state.lastPolledBalance = action.payload;
+      })
       .addCase(fetchUsers.pending, (state) => {
         state.isLoading = true;
       })
@@ -129,10 +154,10 @@ const usersSlice = createSlice({
         state.isLoading = true;
       })
       .addCase(addPointsToUser.fulfilled, (state, action) => {
-        const { _id, points_balance } = action.payload;
+        const { _id, nox_balance } = action.payload;
         const user = state.users.find(u => u._id === _id);
         if (user) {
-          user.points_balance = points_balance;
+          user.nox_balance = nox_balance;
         }
         state.isLoading = false;
       })

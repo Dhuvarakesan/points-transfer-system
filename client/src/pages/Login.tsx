@@ -73,7 +73,7 @@ const Login = () => {
               <img src="/favicon.ico" alt="App Logo" className="w-16 h-16 rounded-2xl" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Point Share</h1>
+          <h1 className="text-3xl font-bold tracking-tight">ASCENSION</h1>
           {/* <p className="text-muted-foreground">
             Secure point transfers made simple
           </p> */}

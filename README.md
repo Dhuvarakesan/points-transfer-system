@@ -1,7 +1,6 @@
+# ASCENSION: Points Transfer System
 
-# Point Share: Points Transfer System
-
-Point Share is a full-stack points transfer system for organizations, built with React, Redux Toolkit, TypeScript, Express, and MongoDB. It enables secure point transfers, user management, transaction history, and admin controls, all with a modern, responsive UI.
+ASCENSION is a full-stack points transfer system for organizations, built with React, Redux Toolkit, TypeScript, Express, and MongoDB. It enables secure point transfers, user management, transaction history, and admin controls, all with a modern, responsive UI.
 
 ## Features
 - User registration, login, and authentication (with encrypted passwords)

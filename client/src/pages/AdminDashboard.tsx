@@ -94,18 +94,18 @@ const AdminDashboard = () => {
   const transactions = Array.isArray(transactionsFromState) ? transactionsFromState : [];
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isAddPointsDialogOpen, setIsAddPointsDialogOpen] = useState(false);
+  const [isAddNOXDialogOpen, setIsAddNOXDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [pointsToAdd, setPointsToAdd] = useState(0);
+  const [NOXToAdd, setNOXToAdd] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [celebrationPoints, setCelebrationPoints] = useState(0);
+  const [celebrationNOX, setCelebrationNOX] = useState(0);
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
     role: "user" as "admin" | "user",
-    points_balance: 0,
+    nox_balance: 0,
     status: "active" as "active" | "inactive",
     password: "", // Add password field
   });
@@ -116,11 +116,12 @@ const AdminDashboard = () => {
     name: "",
     email: "",
     role: "user" as "admin" | "user",
-    points_balance: 0,
+    nox_balance: 0,
     status: "active" as "active" | "inactive",
     password: "",
   });
   const [showEditPassword, setShowEditPassword] = useState(false);
+  const [operationType, setOperationType] = useState<'add' | 'subtract'>('add');
 
   const openEditDialog = (user: User) => {
     setEditUser(user);
@@ -128,7 +129,7 @@ const AdminDashboard = () => {
       name: user.name,
       email: user.email,
       role: user.role,
-      points_balance: user.points_balance,
+      nox_balance: user.nox_balance,
       status: user.status as "active" | "inactive",
       password: user.password || "",
     });
@@ -162,6 +163,15 @@ const AdminDashboard = () => {
   dispatch(fetchAllTransactions());
   }, [dispatch]);
 
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      dispatch(fetchUsers({}));
+        dispatch(fetchAllTransactions());
+    }, 30000); // Auto-refresh every 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [dispatch]);
+
   const usersArray = Array.isArray(users) ? (users as unknown as User[]) : [];
   const validUsers = usersArray.filter(
     (u) => u && typeof u.name === "string" && typeof u.email === "string"
@@ -171,7 +181,7 @@ const AdminDashboard = () => {
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  const totalPoints = validUsers.reduce((sum, user) => sum + (user.points_balance || 0), 0);
+  const totalNOX = validUsers.reduce((sum, user) => sum + (user.nox_balance || 0), 0);
   const activeUsers = validUsers.filter((u) => u.isActive).length;
 
   const handleCreateUser = async () => {
@@ -184,7 +194,7 @@ const AdminDashboard = () => {
         name: "",
         email: "",
         role: "user",
-        points_balance: 0,
+        nox_balance: 0,
         status: "active",
         password: "",
       });
@@ -221,32 +231,36 @@ const AdminDashboard = () => {
     setDeleteDialogOpen(true);
   };
 
-  const openAddPointsDialog = (user) => {
+  const openPointsDialog = (user: User, type: 'add' | 'subtract' = 'add') => {
     setSelectedUser(user);
-    setPointsToAdd(0);
-    setIsAddPointsDialogOpen(true);
+    setNOXToAdd(0);
+    setOperationType(type);
+    setIsAddNOXDialogOpen(true);
   };
 
-  const handleAddPoints = async () => {
-    if (selectedUser && pointsToAdd > 0) {
+  const handlePointsOperation = async () => {
+    if (selectedUser && NOXToAdd > 0) {
       try {
+        const points = operationType === 'add' ? NOXToAdd : -NOXToAdd;
         await dispatch(
-          addPointsToUser({ userId: selectedUser._id, points: pointsToAdd })
+          addPointsToUser({ userId: selectedUser._id, points })
         );
-        setIsAddPointsDialogOpen(false);
-        setCelebrationPoints(pointsToAdd);
-        setShowCelebration(true);
+        setIsAddNOXDialogOpen(false);
+        setCelebrationNOX(NOXToAdd);
+        setShowCelebration(operationType === 'add');
         toast({
-          title: "Success",
-          description: `Added ${pointsToAdd} points to ${selectedUser.name}`,
+          title: 'Success',
+          description: `${operationType === 'add' ? 'Added' : 'Subtracted'} ${NOXToAdd} points to ${selectedUser.name}`,
         });
+        // Refresh users data
+        await dispatch(fetchUsers({}));
         setSelectedUser(null);
-        setPointsToAdd(0);
+        setNOXToAdd(0);
       } catch (error) {
         toast({
-          title: "Error",
-          description: "Failed to add points",
-          variant: "destructive",
+          title: 'Error',
+          description: `Failed to ${operationType} points`,
+          variant: 'destructive',
         });
       }
     }
@@ -305,16 +319,16 @@ const AdminDashboard = () => {
           <Card className="bg-gradient-card shadow-medium">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">
-                Total Points
+                Total NOX
               </CardTitle>
               <CreditCard className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {totalPoints.toLocaleString()}
+                {totalNOX.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
-                Points in circulation
+                NOX in circulation
               </p>
             </CardContent>
           </Card>
@@ -375,7 +389,7 @@ const AdminDashboard = () => {
                   <TableRow>
                     <TableHead>User</TableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead>Points</TableHead>
+                    <TableHead>NOX</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="!pl-8">Actions</TableHead>
                   </TableRow>
@@ -401,7 +415,8 @@ const AdminDashboard = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {(user.points_balance ?? 0).toLocaleString()}
+                        {(user.nox_balance ?? 0).toLocaleString()
+                        }
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -417,9 +432,16 @@ const AdminDashboard = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openAddPointsDialog(user)}
+                            onClick={() => openPointsDialog(user, 'add')}
                           >
-                            <Coins className="w-4 h-4" />
+                            <Coins className="w-4 h-4" /> Add
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openPointsDialog(user, 'subtract')}
+                          >
+                            <Coins className="w-4 h-4" /> Subtract
                           </Button>
                           <Button
                             variant="ghost"
@@ -641,16 +663,16 @@ const AdminDashboard = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="points">Initial Points</Label>
+              <Label htmlFor="points">Initial NOX</Label>
               <Input
                 id="points"
                 type="number"
                 placeholder="0"
-                value={newUser.points_balance}
+                value={newUser.nox_balance}
                 onChange={(e) =>
                   setNewUser({
                     ...newUser,
-                    points_balance: Number(e.target.value),
+                    nox_balance: Number(e.target.value),
                   })
                 }
               />
@@ -773,15 +795,15 @@ const AdminDashboard = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-points">Points</Label>
+              <Label htmlFor="edit-points">NOX</Label>
               <Input
                 id="edit-points"
                 type="number"
-                value={editUserData.points_balance}
+                value={editUserData.nox_balance}
                 onChange={(e) =>
                   setEditUserData({
                     ...editUserData,
-                    points_balance: Number(e.target.value),
+                    nox_balance: Number(e.target.value),
                   })
                 }
               />
@@ -799,14 +821,14 @@ const AdminDashboard = () => {
 
       {/* Add Points Dialog */}
       <Dialog
-        open={isAddPointsDialogOpen}
-        onOpenChange={setIsAddPointsDialogOpen}
+        open={isAddNOXDialogOpen}
+        onOpenChange={setIsAddNOXDialogOpen}
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Points to User</DialogTitle>
+            <DialogTitle>{operationType === 'add' ? 'Add' : 'Subtract'} NOX to User</DialogTitle>
             <DialogDescription>
-              Add points to {selectedUser?.name}'s account
+              {operationType === 'add' ? 'Add NOX to' : 'Remove NOX from'} {selectedUser?.name}'s account
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -816,18 +838,18 @@ const AdminDashboard = () => {
                   Current Balance:
                 </span>
                 <span className="font-medium">
-                  {selectedUser?.points?.toLocaleString()} points
+                  {selectedUser?.points?.toLocaleString()} NOX
                 </span>
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="points">Points to Add</Label>
+              <Label htmlFor="points">NOX to {operationType === 'add' ? 'Add' : 'Subtract'}</Label>
               <Input
                 id="points"
                 type="number"
-                placeholder="Enter points amount"
-                value={pointsToAdd}
-                onChange={(e) => setPointsToAdd(Number(e.target.value))}
+                placeholder={`Enter NOX amount to ${operationType === 'add' ? 'add' : 'subtract'}`}
+                value={NOXToAdd}
+                onChange={(e) => setNOXToAdd(Number(e.target.value))}
                 min="1"
               />
             </div>
@@ -835,18 +857,18 @@ const AdminDashboard = () => {
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => setIsAddPointsDialogOpen(false)}
+                onClick={() => setIsAddNOXDialogOpen(false)}
               >
                 Cancel
               </Button>
               <Button
-                onClick={handleAddPoints}
+                onClick={handlePointsOperation}
                 className="flex-1"
                 variant="gradient"
-                disabled={pointsToAdd <= 0}
+                disabled={NOXToAdd <= 0}
               >
                 <Coins className="w-4 h-4 mr-2" />
-                Add Points
+                {operationType === 'add' ? 'Add NOX' : 'Subtract NOX'}
               </Button>
             </div>
           </div>
@@ -881,7 +903,7 @@ const AdminDashboard = () => {
       <CelebrationAnimation
         isVisible={showCelebration}
         onComplete={() => setShowCelebration(false)}
-        pointsAdded={celebrationPoints}
+        pointsAdded={celebrationNOX}
       />
     </div>
   );

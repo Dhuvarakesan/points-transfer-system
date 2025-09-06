@@ -7,13 +7,14 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: 'admin' | 'user';
-  points_balance: number;
+  nox_balance: number;
   status: 'active' | 'inactive' | 'suspended';
   createdAt?: Date;
   updatedAt?: Date;
   comparePassword(enteredPassword: string): boolean;
   decryptPassword(): string;
   safeData: IUserSafeData;
+  latestToken?: string; // Add latestToken property
 }
 
 export interface IUserSafeData {
@@ -21,7 +22,7 @@ export interface IUserSafeData {
   name: string;
   email: string;
   role: string;
-  points_balance: number;
+  nox_balance: number;
   status: 'active' | 'inactive' | 'suspended';
   createdAt?: Date;
   updatedAt?: Date;
@@ -36,8 +37,9 @@ const userSchema = new Schema<IUser>({
     minlength: [6, 'Password must be at least 6 characters long'],
   },
   role: { type: String, enum: ['admin', 'user'], default: 'user' },
-  points_balance: { type: Number, default: 0 },
+  nox_balance: { type: Number, default: 0 }, // Default NOX balance
   status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
+  latestToken: { type: String, default: null }, // Add latestToken field
 }, { timestamps: true });
 
 userSchema.pre<IUser>('save', function (next) {
@@ -69,7 +71,7 @@ userSchema.virtual('safeData').get(function (this: IUser): IUserSafeData {
     name: this.name,
     email: this.email,
     role: this.role,
-    points_balance: this.points_balance,
+    nox_balance: this.nox_balance,
     status: this.status,
     createdAt: this.createdAt,
     updatedAt: this.updatedAt,

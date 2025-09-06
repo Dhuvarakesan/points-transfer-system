@@ -5,14 +5,17 @@ interface CelebrationAnimationProps {
   isVisible: boolean;
   onComplete: () => void;
   pointsAdded?: number;
-  isUserDashboard?:boolean;
+  noxAdded?: number;
+  isUserDashboard?: boolean;
+  changeType?: 'credit' | 'debit';
 }
 
 const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
   isVisible,
   onComplete,
   pointsAdded = 0,
-  isUserDashboard = false
+  isUserDashboard = false,
+  changeType
 }) => {
   const [particles, setParticles] = useState<
     Array<{
@@ -48,7 +51,7 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
       const timer = setTimeout(() => {
         setParticles([]);
         onComplete();
-      }, 5000);
+      }, 1000);
 
       return () => clearTimeout(timer);
     } else {
@@ -86,15 +89,23 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
           </div>
           <h2 className="text-2xl font-bold mb-2">
             {isUserDashboard
-              ? 'Welcome to your Points Wallet!'
-              : 'Points Added Successfully!'}
+              ? changeType === 'debit'
+                ? 'Points Debited!'
+                : 'Welcome to your Points Wallet!'
+              : changeType === 'debit'
+                ? 'Points Deducted!'
+                : 'Points Added Successfully!'}
           </h2>
           <p className="text-white/90 text-lg mb-1">
             {isUserDashboard
-              ? `You have ${pointsAdded.toLocaleString()} points available.`
-              : `+${pointsAdded.toLocaleString()} points credited`}
+              ? changeType === 'debit'
+                ? `-${pointsAdded.toLocaleString()} points debited.`
+                : `You have ${pointsAdded.toLocaleString()} points available.`
+              : changeType === 'debit'
+                ? `-${pointsAdded.toLocaleString()} points debited`
+                : `+${pointsAdded.toLocaleString()} points credited`}
           </p>
-          {isUserDashboard && (
+          {isUserDashboard && changeType !== 'debit' && (
             <p className="text-white/70 text-base text-wrap">Start sending points and enjoy rewarding others!</p>
           )}
         </div>
