@@ -151,6 +151,13 @@ const UserDashboard = () => {
     window.localStorage.setItem("dashboardCelebrationShown", "true");
   };
 
+
+  // Hide celebration after animation completes
+  const handleCelebrationComplete = () => {
+    setShowCelebration(false);
+    window.localStorage.setItem("dashboardCelebrationShown", "true");
+  };
+
   const filteredUsers = users.filter(
     (u) =>
       u._id !== user?._id &&
@@ -182,6 +189,7 @@ const UserDashboard = () => {
         ? transaction.receiverName + " " + (transaction.receiverId || "")
         : transaction.senderName;
     const matchesUser = (counterpart ?? "")
+
       .toLowerCase()
       .includes(transactionSearch.toLowerCase());
     // Filter by amount
@@ -288,18 +296,21 @@ const UserDashboard = () => {
               <div className="">
                 <h1 className="text-2xl font-bold hidden sm:block">
                   ASCENSION
+
                 </h1>
                 {/* <p className="text-sm text-muted-foreground">
                   Manage your points and transfers
                 </p> */}
                 <span className="text-sm text-muted-foreground">
                   {user?.name}
+
                 </span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               {/* <span className="text-sm text-muted-foreground">
                 {user?.name}
+
               </span> */}
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="w-4 h-4" />
@@ -592,6 +603,7 @@ const UserDashboard = () => {
                       e.target.value as "all" | "sent" | "received"
                     )
                   }
+
                 >
                   <option value="all">All</option>
                   <option value="sent">Sent</option>
@@ -614,6 +626,7 @@ const UserDashboard = () => {
                 placeholder="Search by amount"
                 value={amountSearch}
                 onChange={(e) => setAmountSearch(e.target.value)}
+
                 style={{ minWidth: 120 }}
               />
             </div>
@@ -722,6 +735,7 @@ const UserDashboard = () => {
           onComplete={() => {}}
           noxAdded={lastPolledBalance || user?.nox_balance || 0}
           changeType={balanceChangeType}
+
         />
       )}
     </div>

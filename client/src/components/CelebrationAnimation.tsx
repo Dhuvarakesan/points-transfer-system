@@ -8,6 +8,7 @@ interface CelebrationAnimationProps {
   noxAdded?: number;
   isUserDashboard?: boolean;
   changeType?: 'credit' | 'debit';
+
 }
 
 const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
@@ -16,6 +17,7 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
   pointsAdded = 0,
   isUserDashboard = false,
   changeType
+
 }) => {
   const [particles, setParticles] = useState<
     Array<{
@@ -52,6 +54,7 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
         setParticles([]);
         onComplete();
       }, 1000);
+
 
       return () => clearTimeout(timer);
     } else {
@@ -106,6 +109,7 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
                 : `+${pointsAdded.toLocaleString()} points credited`}
           </p>
           {isUserDashboard && changeType !== 'debit' && (
+
             <p className="text-white/70 text-base text-wrap">Start sending points and enjoy rewarding others!</p>
           )}
         </div>
