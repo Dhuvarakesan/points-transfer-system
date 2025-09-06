@@ -152,12 +152,6 @@ const UserDashboard = () => {
   };
 
 
-  // Hide celebration after animation completes
-  const handleCelebrationComplete = () => {
-    setShowCelebration(false);
-    window.localStorage.setItem("dashboardCelebrationShown", "true");
-  };
-
   const filteredUsers = users.filter(
     (u) =>
       u._id !== user?._id &&
