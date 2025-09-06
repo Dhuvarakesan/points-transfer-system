@@ -1,3 +1,5 @@
+import CelebrationAnimation from "@/components/CelebrationAnimation";
+// ...existing code...
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +56,10 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 const UserDashboard = () => {
+  // Show celebration animation only once per session
+  const [showCelebration, setShowCelebration] = useState(() => {
+    return !window.localStorage.getItem("dashboardCelebrationShown");
+  });
   const [transferAmount, setTransferAmount] = useState("");
   const [selectedRecipient, setSelectedRecipient] = useState(null);
   const [recipientSearch, setRecipientSearch] = useState("");
@@ -81,11 +87,16 @@ const UserDashboard = () => {
 
   useEffect(() => {
     if (user) {
-      console.log("user", users);
       dispatch(fetchTransactions(user._id));
       dispatch(fetchUsers({ page: 1 })); // Provide default page argument
     }
   }, [dispatch, user]);
+
+  // Hide celebration after animation completes
+  const handleCelebrationComplete = () => {
+    setShowCelebration(false);
+    window.localStorage.setItem("dashboardCelebrationShown", "true");
+  };
 
   const filteredUsers = users.filter(
     (u) =>
@@ -218,9 +229,9 @@ const UserDashboard = () => {
       <div className="container mx-auto px-6 py-8 space-y-8">
         {/* Balance Card */}
         <Card className="bg-gradient-primary text-white shadow-glow">
-          <CardContent className="p-8">
-            <div className="flex items-center justify-between">
-              <div>
+          <CardContent className="p-4 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+              <div className="flex-1">
                 <p className="text-white/80 text-sm font-medium mb-2">
                   Current Balance
                 </p>
@@ -238,7 +249,7 @@ const UserDashboard = () => {
                   </span>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="sm:text-right mt-6 sm:mt-0 flex-shrink-0">
                 <Dialog
                   open={isTransferDialogOpen}
                   onOpenChange={setIsTransferDialogOpen}
@@ -253,7 +264,7 @@ const UserDashboard = () => {
                       Send Points
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
+                  <DialogContent className="w-full max-w-xs sm:max-w-md">
                     <DialogHeader>
                       <DialogTitle className="flex items-center space-x-2">
                         <Send className="w-5 h-5" />
@@ -265,8 +276,8 @@ const UserDashboard = () => {
                     </DialogHeader>
                     <div className="space-y-6">
                       {/* Current Balance Display */}
-                      <div className="p-4 bg-gradient-card rounded-lg border">
-                        <div className="flex items-center justify-between">
+                      <div className="p-3 sm:p-4 bg-gradient-card rounded-lg border">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                           <div className="flex items-center space-x-2">
                             <CreditCard className="w-5 h-5 text-primary" />
                             <span className="text-sm font-medium">
@@ -282,7 +293,7 @@ const UserDashboard = () => {
                         {showBalancePreview && (
                           <div className="mt-4 pt-4 border-t border-border/50">
                             <div className="space-y-2">
-                              <div className="flex items-center justify-between text-sm">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm gap-2">
                                 <div className="flex items-center space-x-2">
                                   <TrendingDown className="w-4 h-4 text-red-500" />
                                   <span className="text-muted-foreground">
@@ -293,7 +304,7 @@ const UserDashboard = () => {
                                   -{transferAmountNum.toLocaleString()} pts
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between text-sm font-medium">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm font-medium gap-2">
                                 <div className="flex items-center space-x-2">
                                   {newBalance >= 0 ? (
                                     <CheckCircle className="w-4 h-4 text-green-500" />
@@ -579,6 +590,15 @@ const UserDashboard = () => {
           </CardContent>
         </Card>
       </div>
+      {/* Show celebration animation only once on first visit */}
+      {showCelebration && (
+        <CelebrationAnimation
+          isUserDashboard={true}
+          isVisible={true}
+          onComplete={handleCelebrationComplete}
+          pointsAdded={user?.points_balance || 0}
+        />
+      )}
     </div>
   );
 };
