@@ -1,5 +1,5 @@
 import express from 'express';
-import { createUser, deleteUser, getAllTransactions, listUsers } from '../controllers/admin.controller';
+import { createUser, deleteUser, getAllTransactions, listUsers, updateUser } from '../controllers/admin.controller';
 import { addPointsToUser } from '../controllers/points.controller';
 
 const router = express.Router();
@@ -8,6 +8,7 @@ const router = express.Router();
 router.post('/users', createUser);
 router.get('/users', listUsers);
 router.delete('/users/:id', deleteUser);
+router.put('/users/:id', updateUser);
 
 // Admin: Get all transactions
 router.get('/transactions', getAllTransactions);

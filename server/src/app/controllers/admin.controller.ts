@@ -1,6 +1,12 @@
+import CryptoJS from 'crypto-js';
 import { Request, Response } from 'express';
 import Transaction from '../models/transactions.model';
 import User from '../models/users.model';
+
+const DEFAULT_PROTECTED_EMAILS = [
+  'admin@admin.com', // change to your actual default admin email
+  'user@user.com'    // change to your actual default user email
+];
 
 const createUser = async (req: Request, res: Response) => {
   try {
@@ -43,12 +49,15 @@ const listUsers = async (req: Request, res: Response) => {
 const deleteUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const deleted = await User.findByIdAndDelete(id);
-    if (deleted) {
-      res.status(200).json({ success: true, message: 'User deleted successfully.', data: deleted });
-    } else {
-      res.status(404).json({ success: false, message: 'User not found.' });
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
     }
+    if (DEFAULT_PROTECTED_EMAILS.includes(user.email)) {
+      return res.status(403).json({ success: false, message: 'Cannot delete default admin or user account.' });
+    }
+    const deleted = await User.findByIdAndDelete(id);
+    res.status(200).json({ success: true, message: 'User deleted successfully.', data: deleted });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Internal server error', error });
   }
@@ -83,5 +92,24 @@ const getAllTransactions = async (req: Request, res: Response) => {
   }
 };
 
-export { createUser, deleteUser, getAllTransactions, listUsers };
+const updateUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const updates = { ...req.body };
+    if (updates.password) {
+      // Encrypt the password before saving
+      const secret = process.env.VITE_SECRET_KEY || process.env.SECRET_KEY || 'default_secret';
+      updates.password = CryptoJS.AES.encrypt(updates.password, secret).toString();
+    }
+    const user = await User.findByIdAndUpdate(id, updates, { new: true });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+    res.status(200).json({ success: true, message: 'User updated successfully.', data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Internal server error.', error });
+  }
+};
+
+export { createUser, deleteUser, getAllTransactions, listUsers, updateUser };
 

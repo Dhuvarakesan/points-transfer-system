@@ -6,7 +6,7 @@ export interface User {
   role: 'admin' | 'user';
   isActive: boolean;
   status: 'active' | 'inactive' | 'suspended';
-  points: number;
+  points_balance: number;
   createdAt: string;
   updatedAt: string;
   __v?: number;
