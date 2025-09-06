@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AppDispatch, RootState } from "@/store";
 import { clearError, loginUser } from "@/store/slices/authSlice";
-import { CreditCard, Eye, EyeOff, Loader2, Shield, Users } from "lucide-react";
+import { Eye, EyeOff, Loader2, Shield, Users } from "lucide-react";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -50,14 +50,14 @@ const Login = () => {
   const demoCredentials = [
     {
       label: "Admin Account",
-      email: "admin1@admin.com",
-      password: "admin1",
+      email: "admin@admin.com",
+      password: "admin@admin",
       icon: Shield,
     },
     {
       label: "User Account",
-      email: "user@example.com",
-      password: "user123",
+      email: "user@user.com",
+      password: "user@user",
       icon: Users,
     },
   ];
@@ -68,16 +68,15 @@ const Login = () => {
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-gradient-hero rounded-xl flex items-center justify-center shadow-glow">
-              <CreditCard className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 bg-transparent rounded-xl flex items-center justify-center shadow-glow">
+              {/* <CreditCard className="w-8 h-8 text-white" /> */}
+              <img src="/favicon.ico" alt="App Logo" className="w-16 h-16 rounded-2xl" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Point Transfer App
-          </h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight">Point Share</h1>
+          {/* <p className="text-muted-foreground">
             Secure point transfers made simple
-          </p>
+          </p> */}
         </div>
 
         {/* Login Form */}
@@ -104,7 +103,9 @@ const Login = () => {
                   required
                   disabled={isLoading}
                 />
-                {emailError && <p className="text-sm text-destructive">{emailError}</p>}
+                {emailError && (
+                  <p className="text-sm text-destructive">{emailError}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
@@ -176,8 +177,8 @@ const Login = () => {
                 onClick={() => {
                   setEmail(cred.email);
                   setPassword(cred.password);
-                  setEmailError('');
-                  setPasswordError('');
+                  setEmailError("");
+                  setPasswordError("");
                 }}
               >
                 <div className="flex items-center space-x-3">

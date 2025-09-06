@@ -23,8 +23,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,6 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { decryptString } from "@/lib/cryptoUtils";
 import { AppDispatch, RootState } from "@/store";
 import { logoutUser } from "@/store/slices/authSlice";
 import { fetchAllTransactions } from "@/store/slices/transactionsSlice";
@@ -52,7 +52,8 @@ import {
   createUser,
   deleteUser,
   fetchUsers,
-  setSearchTerm
+  setSearchTerm,
+  updateUser,
 } from "@/store/slices/usersSlice";
 import { User } from "@/types/user";
 import {
@@ -60,6 +61,8 @@ import {
   Coins,
   CreditCard,
   Edit3,
+  Eye,
+  EyeOff,
   LogOut,
   Plus,
   Search,
@@ -106,6 +109,53 @@ const AdminDashboard = () => {
     status: "active" as "active" | "inactive",
     password: "", // Add password field
   });
+  // Edit user state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [editUserData, setEditUserData] = useState({
+    name: "",
+    email: "",
+    role: "user" as "admin" | "user",
+    points_balance: 0,
+    status: "active" as "active" | "inactive",
+    password: "",
+  });
+  const [showEditPassword, setShowEditPassword] = useState(false);
+
+  const openEditDialog = (user: User) => {
+    setEditUser(user);
+    setEditUserData({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      points_balance: user.points_balance,
+      status: user.status as "active" | "inactive",
+      password: user.password || "",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditUser = async () => {
+    if (!editUser) return;
+    const result = await dispatch(
+      updateUser({
+        _id: editUser._id,
+    ...editUserData,
+      })
+    );
+    if (updateUser.fulfilled.match(result) && result.payload) {
+      setIsEditDialogOpen(false);
+      setEditUser(null);
+      toast({ title: "Success", description: "User Update Succesfully" });
+    } else {
+      const errorMsg ="Failed to update user";
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
   dispatch(fetchUsers({}));
@@ -121,13 +171,13 @@ const AdminDashboard = () => {
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  const totalPoints = validUsers.reduce((sum, user) => sum + (user.points || 0), 0);
+  const totalPoints = validUsers.reduce((sum, user) => sum + (user.points_balance || 0), 0);
   const activeUsers = validUsers.filter((u) => u.isActive).length;
 
   const handleCreateUser = async () => {
     // Encrypt password before sending
     
-    const result = await dispatch(createUser(newUser));
+    const result = await dispatch(createUser({ ...newUser, status: newUser.status as "active" | "inactive" }));
     if (createUser.fulfilled.match(result) && result.payload.success) {
       setIsCreateDialogOpen(false);
       setNewUser({
@@ -181,7 +231,7 @@ const AdminDashboard = () => {
     if (selectedUser && pointsToAdd > 0) {
       try {
         await dispatch(
-          addPointsToUser({ userId: selectedUser.id, points: pointsToAdd })
+          addPointsToUser({ userId: selectedUser._id, points: pointsToAdd })
         );
         setIsAddPointsDialogOpen(false);
         setCelebrationPoints(pointsToAdd);
@@ -296,105 +346,14 @@ const AdminDashboard = () => {
                   Create, edit, and manage user accounts
                 </CardDescription>
               </div>
-              <Dialog
-                open={isCreateDialogOpen}
-                onOpenChange={setIsCreateDialogOpen}
+              <Button
+                variant="gradient"
+                className="hover:opacity-80 transition-smooth"
+                onClick={()=>setIsCreateDialogOpen(true)}
               >
-                <DialogTrigger asChild>
-                  <Button
-                    variant="gradient"
-                    className="hover:opacity-80 transition-smooth"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Create User
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Create New User</DialogTitle>
-                    <DialogDescription>
-                      Add a new user to the system
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Name</Label>
-                      <Input
-                        id="name"
-                        placeholder="User name"
-                        value={newUser.name}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, name: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="user@example.com"
-                        value={newUser.email}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, email: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Enter password"
-                        value={newUser.password}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, password: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="role">Role</Label>
-                      <Select
-                        value={newUser.role}
-                        onValueChange={(value: "admin" | "user") =>
-                          setNewUser({ ...newUser, role: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="user">User</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="points">Initial Points</Label>
-                      <Input
-                        id="points"
-                        type="number"
-                        placeholder="0"
-                        value={newUser.points_balance}
-                        onChange={(e) =>
-                          setNewUser({
-                            ...newUser,
-                            points_balance: Number(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
-
-                    <Button
-                      onClick={handleCreateUser}
-                      className="w-full"
-                      variant="gradient"
-                    >
-                      Create User
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                <Plus className="w-4 h-4" />
+                Create User
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -418,7 +377,7 @@ const AdminDashboard = () => {
                     <TableHead>Role</TableHead>
                     <TableHead>Points</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="!pl-8">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -442,7 +401,7 @@ const AdminDashboard = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {(user?.points_balance ?? 0).toLocaleString()}
+                        {(user.points_balance ?? 0).toLocaleString()}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -454,18 +413,22 @@ const AdminDashboard = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-2 pe-8 ">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => openAddPointsDialog(user)}
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
                           >
                             <Coins className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEditDialog({...user,password:decryptString(user.password)})}
+                          >
                             <Edit3 className="w-4 h-4" />
                           </Button>
+
                           <Button
                             variant="ghost"
                             size="sm"
@@ -505,7 +468,7 @@ const AdminDashboard = () => {
                 }
                 className="md:w-1/3"
               />
-              <Select
+              {/* <Select
                 value={transactionFilter.status}
                 onValueChange={(val) =>
                   setTransactionFilter((f) => ({ ...f, status: val }))
@@ -520,7 +483,7 @@ const AdminDashboard = () => {
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>
                 </SelectContent>
-              </Select>
+              </Select> */}
               {/* <Input
                 type="date"
                 value={transactionFilter.startDate}
@@ -603,6 +566,236 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
+      {/* Create User Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New User</DialogTitle>
+            <DialogDescription>Add a new user to the system</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                placeholder="User name"
+                value={newUser.name}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, name: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="user@example.com"
+                value={newUser.email}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, email: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showEditPassword ? "text" : "password"}
+                  placeholder="Enter password"
+                  value={newUser.password}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, password: e.target.value })
+                  }
+                />
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  onClick={() => setShowEditPassword((v) => !v)}
+                  tabIndex={-1}
+                >
+                  {!showEditPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select
+                value={newUser.role}
+                onValueChange={(value: "admin" | "user") =>
+                  setNewUser({ ...newUser, role: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="points">Initial Points</Label>
+              <Input
+                id="points"
+                type="number"
+                placeholder="0"
+                value={newUser.points_balance}
+                onChange={(e) =>
+                  setNewUser({
+                    ...newUser,
+                    points_balance: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+
+            <Button
+              onClick={handleCreateUser}
+              className="w-full"
+              variant="gradient"
+            >
+              Create User
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user details for {editUser?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={editUserData.name}
+                onChange={(e) =>
+                  setEditUserData({
+                    ...editUserData,
+                    name: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editUserData.email}
+                onChange={(e) =>
+                  setEditUserData({
+                    ...editUserData,
+                    email: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="edit-password"
+                  type={showEditPassword ? "text" : "password"}
+                  value={editUserData.password}
+                  onChange={(e) => {
+                    setEditUserData({
+                      ...editUserData,
+                      password: e.target.value,
+                    });
+                  }}
+                />
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  onClick={() => setShowEditPassword((v) => !v)}
+                  tabIndex={-1}
+                >
+                  {!showEditPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-role">Role</Label>
+              <Select
+                value={editUserData.role}
+                onValueChange={(value: "admin" | "user") =>
+                  setEditUserData({
+                    ...editUserData,
+                    role: value,
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-status">Status</Label>
+              <Select
+                value={editUserData.status}
+                onValueChange={(value: "active" | "inactive") =>
+                  setEditUserData({
+                    ...editUserData,
+                    status: value,
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-points">Points</Label>
+              <Input
+                id="edit-points"
+                type="number"
+                value={editUserData.points_balance}
+                onChange={(e) =>
+                  setEditUserData({
+                    ...editUserData,
+                    points_balance: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <Button
+              onClick={handleEditUser}
+              className="w-full"
+              variant="gradient"
+            >
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Points Dialog */}
       <Dialog

@@ -11,8 +11,8 @@ export const encryptString = (plainText: string): string => {
 
 // Function to decrypt a string
 export const decryptString = (cipherText: string): string => {
-  console.log('serect key:',getConfig().secretKey)
+  // console.log('serect key:',getConfig().secretKey)
   const bytes = CryptoJS.AES.decrypt(cipherText, getConfig().secretKey);
-  console.log("out1:", bytes, '\n', 'out2:', bytes.toString(CryptoJS.enc.Utf8))
+  // console.log("out1:", bytes, '\n', 'out2:', bytes.toString(CryptoJS.enc.Utf8))
   return bytes.toString(CryptoJS.enc.Utf8);
 };

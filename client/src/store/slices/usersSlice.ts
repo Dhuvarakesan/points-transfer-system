@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import axios, { AxiosError } from 'axios';
-import { createUser as createUserAPI, deleteUser as deleteUserAPI, editUser, listUsers } from '../../api';
+import { AxiosError } from 'axios';
+import { addPoints, createUser as createUserAPI, deleteUser as deleteUserAPI, editUser, listUsers } from '../../api';
 
 interface User {
   _id: string; // Make _id mandatory
@@ -54,16 +54,17 @@ export const createUser = createAsyncThunk(
 export const addPointsToUser = createAsyncThunk(
   'users/addPoints',
   async ({ userId, points }: { userId: string; points: number }) => {
-    const response = await axios.post('/admin/users/add-points', { userId, points });
+    console.log({ userId, points })
+    const response = await addPoints({ userId, points });
     return response.data.data;
   }
 );
 
 export const updateUser = createAsyncThunk(
   'users/updateUser',
-  async ({ id, ...updates }: Partial<User> & { id: string }) => {
-    const response = await editUser(id, updates);
-    return { id, updates: response.data };
+  async ({ _id, ...updates }: Partial<User> & { _id: string }) => {
+    const response = await editUser(_id, updates);
+    return { _id, updates: response.data.data };
   }
 );
 
@@ -114,7 +115,7 @@ const usersSlice = createSlice({
         }
       })
       .addCase(updateUser.fulfilled, (state, action) => {
-        const index = state.users.findIndex(u => u._id === action.payload.id);
+        const index = state.users.findIndex(u => u._id === action.payload._id);
         if (index !== -1) {
           state.users[index] = { ...state.users[index], ...action.payload.updates };
         }
@@ -129,10 +130,10 @@ const usersSlice = createSlice({
         state.isLoading = true;
       })
       .addCase(addPointsToUser.fulfilled, (state, action) => {
-        const { userId, points } = action.payload;
-        const user = state.users.find(u => u._id === userId);
+        const { _id, points_balance } = action.payload;
+        const user = state.users.find(u => u._id === _id);
         if (user) {
-          user.points_balance += points;
+          user.points_balance = points_balance;
         }
         state.isLoading = false;
       })

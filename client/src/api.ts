@@ -10,6 +10,7 @@ export const editUser = (id, data) => customAxios.put(`/admin/users/${id}`, data
 export const deleteUser = (id) => customAxios.delete(`/admin/users/${id}`);
 export const listUsers = (params) => customAxios.get('/admin/users', { params });
 export const getAllTransactions = () => customAxios.get('/admin/transactions');
+export const addPoints = (data) => customAxios.post('/admin/users/add-points',data);
 
 // User APIs
 export const getProfile = () => customAxios.get('/users/me');
