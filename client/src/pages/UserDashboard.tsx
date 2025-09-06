@@ -145,6 +145,7 @@ const UserDashboard = () => {
 
 
 
+
   // Hide celebration after animation completes
   const handleCelebrationComplete = () => {
     setShowCelebration(false);
