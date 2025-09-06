@@ -1,11 +1,14 @@
+
+
+import CelebrationAnimation from "@/components/CelebrationAnimation";
+// ...existing code...
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "@/components/ui/card";
 import {
   Dialog,
@@ -47,13 +50,18 @@ import {
   LogOut,
   Search,
   Send,
-  TrendingDown,
-  Wallet,
+  TrendingDown
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 const UserDashboard = () => {
+  // Transaction filter state
+  const [transactionFilter, setTransactionFilter] = useState<'all' | 'sent' | 'received'>('all');
+  // Show celebration animation only once per session
+  const [showCelebration, setShowCelebration] = useState(() => {
+    return !window.localStorage.getItem("dashboardCelebrationShown");
+  });
   const [transferAmount, setTransferAmount] = useState("");
   const [selectedRecipient, setSelectedRecipient] = useState(null);
   const [recipientSearch, setRecipientSearch] = useState("");
@@ -81,11 +89,16 @@ const UserDashboard = () => {
 
   useEffect(() => {
     if (user) {
-      console.log("user", users);
       dispatch(fetchTransactions(user._id));
       dispatch(fetchUsers({ page: 1 })); // Provide default page argument
     }
   }, [dispatch, user]);
+
+  // Hide celebration after animation completes
+  const handleCelebrationComplete = () => {
+    setShowCelebration(false);
+    window.localStorage.setItem("dashboardCelebrationShown", "true");
+  };
 
   const filteredUsers = users.filter(
     (u) =>
@@ -103,6 +116,31 @@ const UserDashboard = () => {
   const receivedTransactions = userTransactions.filter(
     (t) => t.receiverId === user?._id
   );
+
+  // Transaction search state
+  const [transactionSearch, setTransactionSearch] = useState("");
+  const [amountSearch, setAmountSearch] = useState("");
+
+  // Filtered transactions for table
+  const filteredTransactions = (transactionFilter === 'all'
+    ? userTransactions
+    : transactionFilter === 'sent'
+    ? sentTransactions
+    : receivedTransactions
+  ).filter((transaction) => {
+    // Filter by user name/email
+    const counterpart = transaction.senderId === user._id
+      ? transaction.receiverName + " " + (transaction.receiverId || "")
+      : transaction.senderName;
+    const matchesUser = counterpart
+      .toLowerCase()
+      .includes(transactionSearch.toLowerCase());
+    // Filter by amount
+    const matchesAmount = amountSearch
+      ? transaction.amount.toString().includes(amountSearch)
+      : true;
+    return matchesUser && matchesAmount;
+  });
 
   const handleTransfer = async () => {
     // console.log("transfer", transfer, user);
@@ -193,22 +231,32 @@ const UserDashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <Wallet className="w-6 h-6 text-white" />
+                {/* <User className="w-6 h-6 text-white" /> */}
+                <img
+                  src="/favicon.ico"
+                  alt="App Logo"
+                  className="rounded-2xl"
+                />
               </div>
-              <div>
-                <h1 className="text-2xl font-bold">My Dashboard</h1>
-                <p className="text-sm text-muted-foreground">
+              <div className="">
+                <h1 className="text-2xl font-bold hidden sm:block">
+                  Point Share
+                </h1>
+                {/* <p className="text-sm text-muted-foreground">
                   Manage your points and transfers
-                </p>
+                </p> */}
+                <span className="text-sm text-muted-foreground">
+                  Welcome, {user?.name}
+                </span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground">
+              {/* <span className="text-sm text-muted-foreground">
                 Welcome, {user?.name}
-              </span>
+              </span> */}
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="w-4 h-4" />
-                Logout
+                <span className="hidden sm:block">Logout</span>
               </Button>
             </div>
           </div>
@@ -218,9 +266,9 @@ const UserDashboard = () => {
       <div className="container mx-auto px-6 py-8 space-y-8">
         {/* Balance Card */}
         <Card className="bg-gradient-primary text-white shadow-glow">
-          <CardContent className="p-8">
-            <div className="flex items-center justify-between">
-              <div>
+          <CardContent className="p-4 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+              <div className="flex-1">
                 <p className="text-white/80 text-sm font-medium mb-2">
                   Current Balance
                 </p>
@@ -238,7 +286,7 @@ const UserDashboard = () => {
                   </span>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="sm:text-right mt-6 sm:mt-0 flex-shrink-0">
                 <Dialog
                   open={isTransferDialogOpen}
                   onOpenChange={setIsTransferDialogOpen}
@@ -253,7 +301,7 @@ const UserDashboard = () => {
                       Send Points
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
+                  <DialogContent className="w-full max-w-xs sm:max-w-md">
                     <DialogHeader>
                       <DialogTitle className="flex items-center space-x-2">
                         <Send className="w-5 h-5" />
@@ -265,8 +313,8 @@ const UserDashboard = () => {
                     </DialogHeader>
                     <div className="space-y-6">
                       {/* Current Balance Display */}
-                      <div className="p-4 bg-gradient-card rounded-lg border">
-                        <div className="flex items-center justify-between">
+                      <div className="p-3 sm:p-4 bg-gradient-card rounded-lg border">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                           <div className="flex items-center space-x-2">
                             <CreditCard className="w-5 h-5 text-primary" />
                             <span className="text-sm font-medium">
@@ -282,7 +330,7 @@ const UserDashboard = () => {
                         {showBalancePreview && (
                           <div className="mt-4 pt-4 border-t border-border/50">
                             <div className="space-y-2">
-                              <div className="flex items-center justify-between text-sm">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm gap-2">
                                 <div className="flex items-center space-x-2">
                                   <TrendingDown className="w-4 h-4 text-red-500" />
                                   <span className="text-muted-foreground">
@@ -293,7 +341,7 @@ const UserDashboard = () => {
                                   -{transferAmountNum.toLocaleString()} pts
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between text-sm font-medium">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm font-medium gap-2">
                                 <div className="flex items-center space-x-2">
                                   {newBalance >= 0 ? (
                                     <CheckCircle className="w-4 h-4 text-green-500" />
@@ -485,17 +533,49 @@ const UserDashboard = () => {
 
         {/* Transaction History */}
         <Card className="shadow-medium">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Clock className="w-5 h-5" />
-              <span>Transaction History</span>
-            </CardTitle>
-            <CardDescription>
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 w-full">
+              <div className="flex items-center space-x-2">
+                <CardTitle className="flex items-center space-x-2">
+                  <Clock className="w-5 h-5" />
+                  <span>Transaction History</span>
+                </CardTitle>
+                {/* Filter Dropdown */}
+                <select
+                  className="ml-2 border rounded px-2 py-1 text-sm bg-background text-foreground"
+                  value={transactionFilter}
+                  onChange={e => setTransactionFilter(e.target.value as 'all' | 'sent' | 'received')}
+                >
+                  <option value="all">All</option>
+                  <option value="sent">Sent</option>
+                  <option value="received">Received</option>
+                </select>
+              </div>
+              {/* Search by user name/email */}
+              <input
+                type="text"
+                className="mt-2 sm:mt-0 border rounded px-2 py-1 text-sm bg-background text-foreground"
+                placeholder="Search by user name or email"
+                value={transactionSearch}
+                onChange={e => setTransactionSearch(e.target.value)}
+                style={{ minWidth: 180 }}
+              />
+              {/* Search by amount */}
+              <input
+                type="number"
+                className="mt-2 sm:mt-0 border rounded px-2 py-1 text-sm bg-background text-foreground"
+                placeholder="Search by amount"
+                value={amountSearch}
+                onChange={e => setAmountSearch(e.target.value)}
+                style={{ minWidth: 120 }}
+              />
+            </div>
+            {/* <CardDescription>
               Your recent point transfers and receipts
-            </CardDescription>
+            </CardDescription> */}
           </CardHeader>
           <CardContent>
-            {userTransactions.length === 0 ? (
+            {filteredTransactions.length === 0 ? (
               <div className="text-center py-8">
                 <Activity className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">No transactions yet</p>
@@ -516,7 +596,7 @@ const UserDashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {userTransactions.map((transaction) => {
+                    {filteredTransactions.map((transaction) => {
                       const isSent = transaction.senderId === user._id;
                       return (
                         <TableRow key={transaction._id}>
@@ -579,6 +659,15 @@ const UserDashboard = () => {
           </CardContent>
         </Card>
       </div>
+      {/* Show celebration animation only once on first visit */}
+      {showCelebration && (
+        <CelebrationAnimation
+          isUserDashboard={true}
+          isVisible={true}
+          onComplete={handleCelebrationComplete}
+          pointsAdded={user?.points_balance || 0}
+        />
+      )}
     </div>
   );
 };
