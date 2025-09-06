@@ -54,7 +54,6 @@ export const createUser = createAsyncThunk(
 export const addPointsToUser = createAsyncThunk(
   'users/addPoints',
   async ({ userId, points }: { userId: string; points: number }) => {
-    console.log({ userId, points })
     const response = await addPoints({ userId, points });
     return response.data.data;
   }
