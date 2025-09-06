@@ -1,7 +1,4 @@
-
-
 import CelebrationAnimation from "@/components/CelebrationAnimation";
-// ...existing code...
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,8 +33,9 @@ import {
   transferPoints,
 } from "@/store/slices/transactionsSlice";
 import {
+  fetchUserPoints,
   fetchUsers,
-  updateUserPoints as updateOtherUserPoints,
+  updateUserPoints as updateOtherUserPoints
 } from "@/store/slices/usersSlice";
 import {
   Activity,
@@ -55,9 +53,17 @@ import {
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+
 const UserDashboard = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { toast } = useToast();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { users, showBalanceAnimation, lastPolledBalance, balanceChangeType } = useSelector((state: RootState) => state.users);
+  const { transactions, isLoading } = useSelector((state: RootState) => state.transactions);
   // Transaction filter state
-  const [transactionFilter, setTransactionFilter] = useState<'all' | 'sent' | 'received'>('all');
+  const [transactionFilter, setTransactionFilter] = useState<
+    "all" | "sent" | "received"
+  >("all");
   // Show celebration animation only once per session
   const [showCelebration, setShowCelebration] = useState(() => {
     return !window.localStorage.getItem("dashboardCelebrationShown");
@@ -66,20 +72,55 @@ const UserDashboard = () => {
   const [selectedRecipient, setSelectedRecipient] = useState(null);
   const [recipientSearch, setRecipientSearch] = useState("");
   const [showBalancePreview, setShowBalancePreview] = useState(false);
-  const dispatch = useDispatch<AppDispatch>();
-  const { toast } = useToast();
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { users } = useSelector((state: RootState) => state.users);
-  const { transactions, isLoading } = useSelector(
-    (state: RootState) => state.transactions
-  );
-
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
+  // Transaction search state
+  const [transactionSearch, setTransactionSearch] = useState("");
+  const [amountSearch, setAmountSearch] = useState("");
+
+  // Live data state
+  // Poll live data APIs every 1 minute (not every 1s, to avoid duplicate polling)
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+    const fetchLiveData = async () => {
+      try {
+        dispatch(fetchTransactions(user._id));
+        dispatch(fetchUsers({ page: 1 }));
+        // Fetch user points balance for polling/animation
+        if (user?._id) {
+          dispatch(fetchUserPoints(user._id));
+        }
+      } catch (err) {
+        // Optionally handle error
+      }
+    };
+    if (user) {
+      fetchLiveData();
+      intervalId = setInterval(fetchLiveData, 30000);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [dispatch, user]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (user?._id) {
+        dispatch(fetchUserPoints(user._id));
+      }
+    }, 30000); // Poll every 30 seconds
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [dispatch, user]);
+
+
+
   const transferAmountNum = parseInt(transferAmount) || 0;
-  const newBalance = user ? user.points_balance - transferAmountNum : 0;
+  const newBalance = user ? user.nox_balance - transferAmountNum : 0;
   const isValidTransfer =
     transferAmountNum > 0 &&
-    transferAmountNum <= (user?.points_balance || 0) &&
+    transferAmountNum <= (user?.nox_balance || 0) &&
     selectedRecipient;
 
   // Show balance preview when amount is entered
@@ -87,12 +128,29 @@ const UserDashboard = () => {
     setShowBalancePreview(transferAmountNum > 0);
   }, [transferAmountNum]);
 
-  useEffect(() => {
-    if (user) {
-      dispatch(fetchTransactions(user._id));
-      dispatch(fetchUsers({ page: 1 })); // Provide default page argument
-    }
-  }, [dispatch, user]);
+
+  // // Poll transactions every 1s for live updates (keep this for fast transaction updates)
+  // useEffect(() => {
+  //   let intervalId: NodeJS.Timeout | null = null;
+  //   if (user) {
+  //     dispatch(fetchTransactions(user._id));
+  //     intervalId = setInterval(() => {
+  //       // dispatch(fetchTransactions(user._id));
+  //     }, 1000);
+  //   }
+  //   return () => {
+  //     if (intervalId) clearInterval(intervalId);
+  //   };
+  // }, [dispatch, user]);
+
+
+
+  // Hide celebration after animation completes
+  const handleCelebrationComplete = () => {
+    setShowCelebration(false);
+    window.localStorage.setItem("dashboardCelebrationShown", "true");
+  };
+
 
   // Hide celebration after animation completes
   const handleCelebrationComplete = () => {
@@ -117,22 +175,21 @@ const UserDashboard = () => {
     (t) => t.receiverId === user?._id
   );
 
-  // Transaction search state
-  const [transactionSearch, setTransactionSearch] = useState("");
-  const [amountSearch, setAmountSearch] = useState("");
-
   // Filtered transactions for table
-  const filteredTransactions = (transactionFilter === 'all'
-    ? userTransactions
-    : transactionFilter === 'sent'
-    ? sentTransactions
-    : receivedTransactions
+  const filteredTransactions = (
+    transactionFilter === "all"
+      ? userTransactions
+      : transactionFilter === "sent"
+      ? sentTransactions
+      : receivedTransactions
   ).filter((transaction) => {
     // Filter by user name/email
-    const counterpart = transaction.senderId === user._id
-      ? transaction.receiverName + " " + (transaction.receiverId || "")
-      : transaction.senderName;
-    const matchesUser = counterpart
+    const counterpart =
+      transaction.senderId === user._id
+        ? transaction.receiverName + " " + (transaction.receiverId || "")
+        : transaction.senderName;
+    const matchesUser = (counterpart ?? "")
+
       .toLowerCase()
       .includes(transactionSearch.toLowerCase());
     // Filter by amount
@@ -153,7 +210,7 @@ const UserDashboard = () => {
       return;
     }
 
-    if (transferAmountNum > user.points_balance) {
+    if (transferAmountNum > user.nox_balance) {
       toast({
         title: "Error",
         description: "Insufficient balance",
@@ -163,8 +220,6 @@ const UserDashboard = () => {
     }
 
     const receiver = users.find((u) => u._id === selectedRecipient._id);
-      // console.log("selected user id :",selectedRecipient)
-
 
     if (!receiver) {
       toast({
@@ -185,11 +240,11 @@ const UserDashboard = () => {
       );
 
       // Update balances
-      dispatch(updateUserPoints(user!.points_balance - transferAmountNum));
+      dispatch(updateUserPoints(user!.nox_balance - transferAmountNum));
       dispatch(
         updateOtherUserPoints({
           userId: selectedRecipient._id,
-          points_balance: selectedRecipient.points_balance + transferAmountNum,
+          nox_balance: selectedRecipient.nox_balance + transferAmountNum,
         })
       );
 
@@ -240,19 +295,22 @@ const UserDashboard = () => {
               </div>
               <div className="">
                 <h1 className="text-2xl font-bold hidden sm:block">
-                  Point Share
+                  ASCENSION
+
                 </h1>
                 {/* <p className="text-sm text-muted-foreground">
                   Manage your points and transfers
                 </p> */}
                 <span className="text-sm text-muted-foreground">
-                  Welcome, {user?.name}
+                  {user?.name}
+
                 </span>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               {/* <span className="text-sm text-muted-foreground">
-                Welcome, {user?.name}
+                {user?.name}
+
               </span> */}
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="w-4 h-4" />
@@ -273,7 +331,7 @@ const UserDashboard = () => {
                   Current Balance
                 </p>
                 <p className="text-4xl font-bold mb-4">
-                  {user.points_balance?.toLocaleString() || 0} Points
+                  {user.nox_balance?.toLocaleString() || 0} Points
                 </p>
                 <div className="flex items-center space-x-4 text-sm text-white/80">
                   <span className="flex items-center">
@@ -322,7 +380,7 @@ const UserDashboard = () => {
                             </span>
                           </div>
                           <span className="text-lg font-bold">
-                            {user?.points_balance?.toLocaleString()} pts
+                            {user?.nox_balance?.toLocaleString()} pts
                           </span>
                         </div>
 
@@ -412,7 +470,7 @@ const UserDashboard = () => {
                                     </div>
                                   </div>
                                   <Badge variant="secondary">
-                                    {user.points_balance.toLocaleString()} pts
+                                    {(user.nox_balance ?? 0).toLocaleString()} pts
                                   </Badge>
                                 </div>
                               </div>
@@ -437,7 +495,7 @@ const UserDashboard = () => {
                             value={transferAmount}
                             onChange={(e) => setTransferAmount(e.target.value)}
                             min="1"
-                            max={user?.points_balance || 0}
+                            max={user?.nox_balance || 0}
                             className="pr-12"
                           />
                           <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
@@ -445,7 +503,7 @@ const UserDashboard = () => {
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Maximum: {user?.points_balance?.toLocaleString()}{" "}
+                          Maximum: {user?.nox_balance?.toLocaleString()}{" "}
                           points
                         </div>
                       </div>
@@ -486,9 +544,7 @@ const UserDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {sentTransactions
-                  .reduce((sum, t) => sum + t.amount, 0)
-                  .toLocaleString()}
+                {sentTransactions.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
                 {sentTransactions.length} transactions
@@ -505,9 +561,7 @@ const UserDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {receivedTransactions
-                  .reduce((sum, t) => sum + t.amount, 0)
-                  .toLocaleString()}
+                {receivedTransactions.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
                 {receivedTransactions.length} transactions
@@ -544,7 +598,12 @@ const UserDashboard = () => {
                 <select
                   className="ml-2 border rounded px-2 py-1 text-sm bg-background text-foreground"
                   value={transactionFilter}
-                  onChange={e => setTransactionFilter(e.target.value as 'all' | 'sent' | 'received')}
+                  onChange={(e) =>
+                    setTransactionFilter(
+                      e.target.value as "all" | "sent" | "received"
+                    )
+                  }
+
                 >
                   <option value="all">All</option>
                   <option value="sent">Sent</option>
@@ -557,7 +616,7 @@ const UserDashboard = () => {
                 className="mt-2 sm:mt-0 border rounded px-2 py-1 text-sm bg-background text-foreground"
                 placeholder="Search by user name or email"
                 value={transactionSearch}
-                onChange={e => setTransactionSearch(e.target.value)}
+                onChange={(e) => setTransactionSearch(e.target.value)}
                 style={{ minWidth: 180 }}
               />
               {/* Search by amount */}
@@ -566,7 +625,8 @@ const UserDashboard = () => {
                 className="mt-2 sm:mt-0 border rounded px-2 py-1 text-sm bg-background text-foreground"
                 placeholder="Search by amount"
                 value={amountSearch}
-                onChange={e => setAmountSearch(e.target.value)}
+                onChange={(e) => setAmountSearch(e.target.value)}
+
                 style={{ minWidth: 120 }}
               />
             </div>
@@ -665,7 +725,17 @@ const UserDashboard = () => {
           isUserDashboard={true}
           isVisible={true}
           onComplete={handleCelebrationComplete}
-          pointsAdded={user?.points_balance || 0}
+          noxAdded={user?.nox_balance || 0}
+        />
+      )}
+      {showBalanceAnimation && (
+        <CelebrationAnimation
+          isUserDashboard={true}
+          isVisible={true}
+          onComplete={() => {}}
+          noxAdded={lastPolledBalance || user?.nox_balance || 0}
+          changeType={balanceChangeType}
+
         />
       )}
     </div>

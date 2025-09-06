@@ -1,3 +1,4 @@
+
 import { Request, Response } from 'express';
 import Transaction from '../models/transactions.model';
 import User from '../models/users.model';
@@ -39,6 +40,23 @@ const getUserTransactionHistory = async (req: Request, res: Response) => {
   }
 };
 
+// Get user NOX balance by user ID
+const getUserPointBalance = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.id;
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'User ID is required.' });
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+    res.status(200).json({ success: true, nox_balance: user.nox_balance });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Internal server error', error });
+  }
+};
+
 const getProfile = async (req: Request, res: Response) => {
   try {
     // req.user should be set by authentication middleware
@@ -72,12 +90,12 @@ const transferPoints = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Sender or receiver not found.' });
     }
 
-    if (sender.points_balance < amount) {
+    if (sender.nox_balance < amount) {
       return res.status(400).json({ success: false, message: 'Insufficient balance.' });
     }
 
-    sender.points_balance -= amount;
-    receiver.points_balance += amount;
+    sender.nox_balance -= amount;
+    receiver.nox_balance += amount;
 
     await sender.save();
     await receiver.save();
@@ -95,7 +113,7 @@ const transferPoints = async (req: Request, res: Response) => {
 
     res.status(200).json({
       success: true,
-      message: 'Points transferred successfully.',
+      message: 'NOX transferred successfully.',
       transaction,
     });
   } catch (error) {
@@ -114,5 +132,5 @@ const transferPoints = async (req: Request, res: Response) => {
   }
 };
 
-export { getProfile, getUserTransactionHistory, transferPoints };
+export { getProfile, getUserPointBalance, getUserTransactionHistory, transferPoints };
 
