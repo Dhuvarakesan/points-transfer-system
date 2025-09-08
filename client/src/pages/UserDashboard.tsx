@@ -1,4 +1,6 @@
 import CelebrationAnimation from "@/components/CelebrationAnimation";
+import LogoutButtons from "@/components/LogoutButtons";
+import SessionTimeoutDialog from "@/components/SessionTimeoutDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +48,6 @@ import {
   CheckCircle,
   Clock,
   CreditCard,
-  LogOut,
   RefreshCw,
   Search,
   Send,
@@ -99,7 +100,7 @@ const UserDashboard = () => {
     };
     if (user) {
       fetchLiveData();
-      intervalId = setInterval(fetchLiveData, 30000);
+      intervalId = setInterval(fetchLiveData, 60000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
@@ -316,14 +317,7 @@ const UserDashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {/* <span className="text-sm text-muted-foreground">
-                {user?.name}
-
-              </span> */}
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:block">Logout</span>
-              </Button>
+              <LogoutButtons onSessionLogout={handleLogout} />
             </div>
           </div>
         </div>
@@ -788,6 +782,7 @@ const UserDashboard = () => {
           pointsAdded={balanceChangeAmount}
         />
       )}
+      <SessionTimeoutDialog onLogout={handleLogout} timeoutMinutes={5} />
     </div>
   );
 };
