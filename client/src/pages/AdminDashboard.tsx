@@ -246,6 +246,7 @@ const AdminDashboard = () => {
           addPointsToUser({ userId: selectedUser._id, points })
         );
         setIsAddNOXDialogOpen(false);
+        console.log('points test1:',NOXToAdd)
         setCelebrationNOX(NOXToAdd);
         setShowCelebration(operationType === 'add');
         toast({

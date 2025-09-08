@@ -5,7 +5,6 @@ interface CelebrationAnimationProps {
   isVisible: boolean;
   onComplete: () => void;
   pointsAdded?: number;
-  noxAdded?: number;
   isUserDashboard?: boolean;
   changeType?: 'credit' | 'debit';
 
@@ -19,6 +18,7 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
   changeType
 
 }) => {
+  console.log("points",pointsAdded)
   const [particles, setParticles] = useState<
     Array<{
       id: number;
@@ -31,6 +31,8 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
     }>
   >([]);
 
+  const dynamicMessage = changeType === 'credit' ? `+${pointsAdded}` : `-${pointsAdded}`;
+
   useEffect(() => {
     if (isVisible) {
       // Generate random particles
@@ -40,7 +42,7 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
         y: -10,
         rotation: Math.random() * 360,
         scale: 0.5 + Math.random() * 0.5,
-        delay: Math.random() * 2000,
+        delay: Math.random() * 1000, // Reduced animation delay
         type: ["coin", "star", "sparkle"][Math.floor(Math.random() * 3)] as
           | "coin"
           | "star"
@@ -49,11 +51,11 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
 
       setParticles(newParticles);
 
-      // Complete animation after 4 seconds
+      // Complete animation after 2 seconds
       const timer = setTimeout(() => {
         setParticles([]);
         onComplete();
-      }, 1000);
+      }, 2000);
 
 
       return () => clearTimeout(timer);
@@ -93,24 +95,28 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
           <h2 className="text-2xl font-bold mb-2">
             {isUserDashboard
               ? changeType === 'debit'
-                ? 'Points Debited!'
+                ? 'NOX Debited!'
                 : 'Welcome to your Points Wallet!'
               : changeType === 'debit'
-                ? 'Points Deducted!'
-                : 'Points Added Successfully!'}
+                ? 'NOX Deducted!'
+                : 'NOX Added Successfully!'}
           </h2>
           <p className="text-white/90 text-lg mb-1">
             {isUserDashboard
-              ? changeType === 'debit'
-                ? `-${pointsAdded.toLocaleString()} points debited.`
-                : `You have ${pointsAdded.toLocaleString()} points available.`
-              : changeType === 'debit'
-                ? `-${pointsAdded.toLocaleString()} points debited`
-                : `+${pointsAdded.toLocaleString()} points credited`}
+              ? changeType === 'debit' && pointsAdded > 0
+                ? `-${pointsAdded.toLocaleString()} nox debited.`
+                : changeType === 'credit' && pointsAdded > 0
+                  ? `+${pointsAdded.toLocaleString()} nox credited.`
+                  : ''
+              : changeType === 'debit' && pointsAdded > 0
+                ? `-${pointsAdded.toLocaleString()} nox debited`
+                : changeType === 'credit' && pointsAdded > 0
+                  ? `+${pointsAdded.toLocaleString()} nox credited`
+                  : ''}
           </p>
           {isUserDashboard && changeType !== 'debit' && (
 
-            <p className="text-white/70 text-base text-wrap">Start sending points and enjoy rewarding others!</p>
+            <p className="text-white/70 text-base text-wrap">Start sending nox and enjoy rewarding others!</p>
           )}
         </div>
       </div>
