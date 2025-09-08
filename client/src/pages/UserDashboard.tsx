@@ -1,4 +1,7 @@
 import CelebrationAnimation from "@/components/CelebrationAnimation";
+import LogoutButtons from "@/components/LogoutButtons";
+import SessionTimeoutDialog from "@/components/SessionTimeoutDialog";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +49,6 @@ import {
   CheckCircle,
   Clock,
   CreditCard,
-  LogOut,
   RefreshCw,
   Search,
   Send,
@@ -99,7 +101,7 @@ const UserDashboard = () => {
     };
     if (user) {
       fetchLiveData();
-      intervalId = setInterval(fetchLiveData, 30000);
+      intervalId = setInterval(fetchLiveData, 60000);
     }
     return () => {
       if (intervalId) clearInterval(intervalId);
@@ -287,6 +289,8 @@ const UserDashboard = () => {
     }
   }, [isTransferDialogOpen]);
 
+  const isAdmin = user?.role === "admin";
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -316,14 +320,8 @@ const UserDashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {/* <span className="text-sm text-muted-foreground">
-                {user?.name}
-
-              </span> */}
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:block">Logout</span>
-              </Button>
+              <ThemeToggle />
+              <LogoutButtons onSessionLogout={handleLogout} />
             </div>
           </div>
         </div>
@@ -342,18 +340,19 @@ const UserDashboard = () => {
                   <p className="text-4xl font-bold">
                     {lastPolledBalance?.toLocaleString() ||
                       user.nox_balance?.toLocaleString() ||
-                      0} NOX
+                      0}{" "}
+                    NOX
                   </p>
                   <Button
-                    // variant="outline"
+                    variant="secondary"
                     size="sm"
-                    className="ml-2"
-                    onClick={async() => {
-                      setIsSendingNOX(true)
-                     await dispatch(fetchUserPoints(user._id));
+                    className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                    onClick={async () => {
+                      setIsSendingNOX(true);
+                      await dispatch(fetchUserPoints(user._id));
                       await dispatch(fetchUsers({ page: 1 }));
                       await dispatch(fetchTransactions(user._id));
-                      setIsSendingNOX(false)
+                      setIsSendingNOX(false);
                     }}
                     title="Refresh Data"
                   >
@@ -760,7 +759,7 @@ const UserDashboard = () => {
         </Card>
       </div>
       {/* Show celebration animation only once on first visit */}
-      {showCelebration && (
+      {!isAdmin && showCelebration && (
         <CelebrationAnimation
           isUserDashboard={true}
           isVisible={true}
@@ -769,7 +768,7 @@ const UserDashboard = () => {
         />
       )}
       {/* Show credit animation when user receives NOX */}
-      {showTransferAnimation && balanceChangeType === 'credit' && (
+      {showTransferAnimation && balanceChangeType === "credit" && (
         <CelebrationAnimation
           isUserDashboard={true}
           isVisible={true}
@@ -779,7 +778,7 @@ const UserDashboard = () => {
         />
       )}
       {/* Show debit animation when user sends NOX */}
-      {showTransferAnimation && balanceChangeType === 'debit' && (
+      {showTransferAnimation && balanceChangeType === "debit" && (
         <CelebrationAnimation
           isUserDashboard={true}
           isVisible={true}
@@ -788,6 +787,7 @@ const UserDashboard = () => {
           pointsAdded={balanceChangeAmount}
         />
       )}
+      <SessionTimeoutDialog onLogout={handleLogout} timeoutMinutes={5} />
     </div>
   );
 };
