@@ -1,3 +1,4 @@
+import ThemeToggle from "@/components/ThemeToggle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -197,6 +198,9 @@ const Login = () => {
             ))}
           </CardContent>
         </Card>
+      </div>
+      <div className="fixed left-4 bottom-4 z-50">
+        <ThemeToggle />
       </div>
     </div>
   );

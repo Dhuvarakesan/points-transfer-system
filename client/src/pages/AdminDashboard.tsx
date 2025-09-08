@@ -1,4 +1,5 @@
 import CelebrationAnimation from "@/components/CelebrationAnimation";
+import ThemeToggle from "@/components/ThemeToggle";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -339,7 +340,10 @@ const AdminDashboard = () => {
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+                <h1 className="text-2xl font-bold">
+                  {" "}
+                  Ascension Admin
+                </h1>
                 <p className="text-sm text-muted-foreground">
                   Manage users and monitor transactions
                 </p>
@@ -347,12 +351,13 @@ const AdminDashboard = () => {
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-muted-foreground">
-                Welcome, {user?.name}
+                {user?.name}
               </span>
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="w-4 h-4" />
                 Logout
               </Button>
+              <ThemeToggle />
             </div>
           </div>
         </div>
@@ -376,9 +381,7 @@ const AdminDashboard = () => {
 
           <Card className="bg-gradient-card shadow-medium">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total NOX
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Total NOX</CardTitle>
               <CreditCard className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -421,7 +424,7 @@ const AdminDashboard = () => {
               <Button
                 variant="gradient"
                 className="hover:opacity-80 transition-smooth"
-                onClick={()=>setIsCreateDialogOpen(true)}
+                onClick={() => setIsCreateDialogOpen(true)}
               >
                 <Plus className="w-4 h-4" />
                 Create User
@@ -473,8 +476,7 @@ const AdminDashboard = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {(user.nox_balance ?? 0).toLocaleString()
-                        }
+                        {(user.nox_balance ?? 0).toLocaleString()}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -490,21 +492,26 @@ const AdminDashboard = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openPointsDialog(user, 'add')}
+                            onClick={() => openPointsDialog(user, "add")}
                           >
                             <Coins className="w-4 h-4" /> Add
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openPointsDialog(user, 'subtract')}
+                            onClick={() => openPointsDialog(user, "subtract")}
                           >
                             <Coins className="w-4 h-4" /> Subtract
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openEditDialog({...user,password:decryptString(user.password)})}
+                            onClick={() =>
+                              openEditDialog({
+                                ...user,
+                                password: decryptString(user.password),
+                              })
+                            }
                           >
                             <Edit3 className="w-4 h-4" />
                           </Button>
@@ -877,15 +884,15 @@ const AdminDashboard = () => {
       </Dialog>
 
       {/* Add Points Dialog */}
-      <Dialog
-        open={isAddNOXDialogOpen}
-        onOpenChange={setIsAddNOXDialogOpen}
-      >
+      <Dialog open={isAddNOXDialogOpen} onOpenChange={setIsAddNOXDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{operationType === 'add' ? 'Add' : 'Subtract'} NOX to User</DialogTitle>
+            <DialogTitle>
+              {operationType === "add" ? "Add" : "Subtract"} NOX to User
+            </DialogTitle>
             <DialogDescription>
-              {operationType === 'add' ? 'Add NOX to' : 'Remove NOX from'} {selectedUser?.name}'s account
+              {operationType === "add" ? "Add NOX to" : "Remove NOX from"}{" "}
+              {selectedUser?.name}'s account
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -900,11 +907,15 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="points">NOX to {operationType === 'add' ? 'Add' : 'Subtract'}</Label>
+              <Label htmlFor="points">
+                NOX to {operationType === "add" ? "Add" : "Subtract"}
+              </Label>
               <Input
                 id="points"
                 type="number"
-                placeholder={`Enter NOX amount to ${operationType === 'add' ? 'add' : 'subtract'}`}
+                placeholder={`Enter NOX amount to ${
+                  operationType === "add" ? "add" : "subtract"
+                }`}
                 value={NOXToAdd}
                 onChange={(e) => setNOXToAdd(Number(e.target.value))}
                 min="1"
@@ -925,7 +936,7 @@ const AdminDashboard = () => {
                 disabled={NOXToAdd <= 0}
               >
                 <Coins className="w-4 h-4 mr-2" />
-                {operationType === 'add' ? 'Add NOX' : 'Subtract NOX'}
+                {operationType === "add" ? "Add NOX" : "Subtract NOX"}
               </Button>
             </div>
           </div>

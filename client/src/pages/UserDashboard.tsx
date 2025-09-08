@@ -1,6 +1,7 @@
 import CelebrationAnimation from "@/components/CelebrationAnimation";
 import LogoutButtons from "@/components/LogoutButtons";
 import SessionTimeoutDialog from "@/components/SessionTimeoutDialog";
+import ThemeToggle from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -288,6 +289,8 @@ const UserDashboard = () => {
     }
   }, [isTransferDialogOpen]);
 
+  const isAdmin = user?.role === "admin";
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -317,6 +320,7 @@ const UserDashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+           <ThemeToggle />
               <LogoutButtons onSessionLogout={handleLogout} />
             </div>
           </div>
@@ -754,7 +758,7 @@ const UserDashboard = () => {
         </Card>
       </div>
       {/* Show celebration animation only once on first visit */}
-      {showCelebration && (
+      {!isAdmin && showCelebration && (
         <CelebrationAnimation
           isUserDashboard={true}
           isVisible={true}
