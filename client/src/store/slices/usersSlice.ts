@@ -24,6 +24,7 @@ interface UsersState {
   lastPolledBalance?: number | null;
   showBalanceAnimation?: boolean;
   balanceChangeType?: 'credit' | 'debit';
+  balanceChangeAmount?: number | undefined;
 }
 
 const initialState: UsersState = {
@@ -36,6 +37,7 @@ const initialState: UsersState = {
   lastPolledBalance: null,
   showBalanceAnimation: false,
   balanceChangeType: undefined,
+  balanceChangeAmount: undefined,
 };
      
 
@@ -111,12 +113,22 @@ const usersSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchUserPoints.fulfilled, (state, action) => {
+        console.log('payload:',action.payload)
         if (state.lastPolledBalance !== null && action.payload !== state.lastPolledBalance) {
           state.showBalanceAnimation = true;
           state.balanceChangeType = action.payload > state.lastPolledBalance ? 'credit' : 'debit';
+          state.balanceChangeAmount = Math.abs(action.payload - state.lastPolledBalance);
         } else {
           state.showBalanceAnimation = false;
           state.balanceChangeType = undefined;
+          state.balanceChangeAmount = undefined;
+        }
+
+        // Ensure lastPolledBalance is set correctly during login
+        if (state.lastPolledBalance === null) {
+          state.showBalanceAnimation = false;
+          state.balanceChangeType = undefined;
+          state.balanceChangeAmount = undefined;
         }
         state.lastPolledBalance = action.payload;
       })
