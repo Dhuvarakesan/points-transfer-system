@@ -84,8 +84,11 @@ const transactionsSlice = createSlice({
         if (!Array.isArray(state.transactions)) {
           state.transactions = [];
         }
-        state.transactions.unshift(action.payload);
-        state.totalTransactions += 1;
+        const existingTransaction = state.transactions.find(transaction => transaction._id === action.payload._id);
+        if (!existingTransaction) {
+          state.transactions.unshift(action.payload);
+          state.totalTransactions += 1;
+        }
       })
       .addCase(transferPoints.rejected, (state, action) => {
         state.isLoading = false;

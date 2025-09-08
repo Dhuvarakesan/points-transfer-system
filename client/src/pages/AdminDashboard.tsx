@@ -122,6 +122,51 @@ const AdminDashboard = () => {
   });
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [operationType, setOperationType] = useState<'add' | 'subtract'>('add');
+  const [currentPage, setCurrentPage] = useState(1);
+  const transactionsPerPage = 10;
+
+  const totalPages = Math.ceil(transactions.length / transactionsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    const dateA = new Date(a.timestamp).getTime();
+    const dateB = new Date(b.timestamp).getTime();
+    return dateB - dateA; // Sort in descending order
+  });
+
+  const paginatedTransactions = sortedTransactions
+    .filter((t) => {
+      const search = transactionFilter.search.toLowerCase();
+      const matchesSearch =
+        t.senderName?.toLowerCase().includes(search) ||
+        t.receiverName?.toLowerCase().includes(search);
+      const matchesStatus =
+        transactionFilter.status === "all" ||
+        t.status === transactionFilter.status;
+      const txDate = t.timestamp ? new Date(t.timestamp) : null;
+      const startDate = transactionFilter.startDate
+        ? new Date(transactionFilter.startDate)
+        : null;
+      const endDate = transactionFilter.endDate
+        ? new Date(transactionFilter.endDate)
+        : null;
+      const matchesDate =
+        (!startDate || (txDate && txDate >= startDate)) &&
+        (!endDate || (txDate && txDate <= endDate));
+      return matchesSearch && matchesStatus && matchesDate;
+    })
+    .slice((currentPage - 1) * transactionsPerPage, currentPage * transactionsPerPage);
 
   const openEditDialog = (user: User) => {
     setEditUser(user);
@@ -270,6 +315,18 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     dispatch(logoutUser());
   };
+
+  const visiblePageNumbers = () => {
+    const start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, currentPage + 2);
+    const pages = [];
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
+  const pageNumbers = visiblePageNumbers();
 
   return (
     <div className="min-h-screen bg-background">
@@ -536,55 +593,54 @@ const AdminDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions
-                    .filter((t) => {
-                      const search = transactionFilter.search.toLowerCase();
-                      const matchesSearch =
-                        t.senderName?.toLowerCase().includes(search) ||
-                        t.receiverName?.toLowerCase().includes(search);
-                      const matchesStatus =
-                        transactionFilter.status === "all" ||
-                        t.status === transactionFilter.status;
-                      const txDate = t.timestamp ? new Date(t.timestamp) : null;
-                      const startDate = transactionFilter.startDate
-                        ? new Date(transactionFilter.startDate)
-                        : null;
-                      const endDate = transactionFilter.endDate
-                        ? new Date(transactionFilter.endDate)
-                        : null;
-                      const matchesDate =
-                        (!startDate || (txDate && txDate >= startDate)) &&
-                        (!endDate || (txDate && txDate <= endDate));
-                      return matchesSearch && matchesStatus && matchesDate;
-                    })
-                    .slice(0, 10)
-                    .map((transaction) => (
-                      <TableRow key={transaction._id}>
-                        <TableCell>{transaction.senderName}</TableCell>
-                        <TableCell>{transaction.receiverName}</TableCell>
-                        <TableCell className="font-medium">
-                          {transaction.amount} points
-                        </TableCell>
-                        <TableCell>
-                          {new Date(transaction.timestamp).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              transaction.status === "completed"
-                                ? "default"
-                                : transaction.status === "pending"
-                                ? "secondary"
-                                : "destructive"
-                            }
-                          >
-                            {transaction.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                  {paginatedTransactions.map((transaction) => (
+                    <TableRow key={transaction._id}>
+                      <TableCell>{transaction.senderName}</TableCell>
+                      <TableCell>{transaction.receiverName}</TableCell>
+                      <TableCell className="font-medium">
+                        {transaction.amount} NOX
+                      </TableCell>
+                      <TableCell>
+                        {new Date(transaction.timestamp).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            transaction.status === "completed"
+                              ? "default"
+                              : transaction.status === "pending"
+                              ? "secondary"
+                              : "destructive"
+                          }
+                        >
+                          {transaction.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
+            </div>
+            <div className="flex justify-center items-center mt-4 space-x-2">
+              {currentPage > 1 && (
+                <Button variant="outline" onClick={handlePreviousPage}>
+                  Previous
+                </Button>
+              )}
+              {pageNumbers.map((pageNumber) => (
+                <Button
+                  key={pageNumber}
+                  variant={pageNumber === currentPage ? "default" : "outline"}
+                  onClick={() => setCurrentPage(pageNumber)}
+                >
+                  {pageNumber}
+                </Button>
+              ))}
+              {currentPage < totalPages && (
+                <Button variant="outline" onClick={handleNextPage}>
+                  Next
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

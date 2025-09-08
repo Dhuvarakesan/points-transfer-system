@@ -18,7 +18,6 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
   changeType
 
 }) => {
-  console.log("points",pointsAdded)
   const [particles, setParticles] = useState<
     Array<{
       id: number;
@@ -42,7 +41,7 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
         y: -10,
         rotation: Math.random() * 360,
         scale: 0.5 + Math.random() * 0.5,
-        delay: Math.random() * 1000, // Reduced animation delay
+        delay: Math.random() * 300, // Reduced animation delay
         type: ["coin", "star", "sparkle"][Math.floor(Math.random() * 3)] as
           | "coin"
           | "star"
@@ -55,7 +54,7 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
       const timer = setTimeout(() => {
         setParticles([]);
         onComplete();
-      }, 2000);
+      },2000);
 
 
       return () => clearTimeout(timer);
@@ -66,16 +65,44 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
 
   if (!isVisible) return null;
 
+  // Show welcome animation if changeType is undefined (login)
+  if (changeType === undefined) {
+    return (
+      <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
+        {/* Backdrop */}
+        <div className="absolute inset-0 bg-black/20 animate-fade-in" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="bg-gradient-primary text-white px-8 py-6 rounded-2xl shadow-glow animate-scale-in text-center">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                <img src="/icons8-coin-48.png" className="w-full h-auto" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Welcome to your NOX Wallet!</h2>
+            <p className="text-white/70 text-base text-wrap">
+              Start sending nox and enjoy rewarding others!
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show credit or debit animation only
+  if (changeType !== 'credit' && changeType !== 'debit') {
+    return null;
+  }
+
   const getParticleIcon = (type: string) => {
     switch (type) {
       case "coin":
-        return <img src='\public\icons8-coin-48.png' />;
+        return <img src="/icons8-coin-48.png" className="w-full h-auto" />;
       case "star":
         return <Star className="w-5 h-5 text-blue-400" fill="currentColor" />;
       case "sparkle":
         return <Sparkles className="w-4 h-4 text-cyan-400" />;
       default:
-        return <img src="\public\icons8-coin-48.png" className="" />;
+        return <img src="\icons8-coin-48.png" className="w-full h-auto" />;
     }
   };
 
@@ -89,35 +116,31 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
         <div className="bg-gradient-primary text-white px-8 py-6 rounded-2xl shadow-glow animate-scale-in text-center">
           <div className="flex items-center justify-center mb-4">
             <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-              <img src="\public\icons8-coin-48.png" className="" />
+              <img src="\icons8-coin-48.png" className="w-full h-auto" />
             </div>
           </div>
           <h2 className="text-2xl font-bold mb-2">
             {isUserDashboard
-              ? changeType === 'debit'
-                ? 'NOX Debited!'
-                : 'Welcome to your Points Wallet!'
-              : changeType === 'debit'
-                ? 'NOX Deducted!'
-                : 'NOX Added Successfully!'}
+              ? changeType === "debit"
+                ? "NOX Debited!"
+                : "NOX Credited!"
+              : changeType === "debit"
+              ? "NOX Deducted!"
+              : "NOX Added Successfully!"}
           </h2>
           <p className="text-white/90 text-lg mb-1">
             {isUserDashboard
-              ? changeType === 'debit' && pointsAdded > 0
+              ? changeType === "debit" && pointsAdded > 0
                 ? `-${pointsAdded.toLocaleString()} nox debited.`
-                : changeType === 'credit' && pointsAdded > 0
-                  ? `+${pointsAdded.toLocaleString()} nox credited.`
-                  : ''
-              : changeType === 'debit' && pointsAdded > 0
-                ? `-${pointsAdded.toLocaleString()} nox debited`
-                : changeType === 'credit' && pointsAdded > 0
-                  ? `+${pointsAdded.toLocaleString()} nox credited`
-                  : ''}
+                : changeType === "credit" && pointsAdded > 0
+                ? `+${pointsAdded.toLocaleString()} nox credited.`
+                : ""
+              : changeType === "debit" && pointsAdded > 0
+              ? `-${pointsAdded.toLocaleString()} nox debited`
+              : changeType === "credit" && pointsAdded > 0
+              ? `+${pointsAdded.toLocaleString()} nox credited`
+              : ""}
           </p>
-          {isUserDashboard && changeType !== 'debit' && (
-
-            <p className="text-white/70 text-base text-wrap">Start sending nox and enjoy rewarding others!</p>
-          )}
         </div>
       </div>
 
@@ -153,7 +176,7 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
         className="absolute bottom-1/3 left-1/3 animate-[float_3s_ease-in-out_infinite] opacity-60"
         style={{ animationDelay: "1s" }}
       >
-        <img src="\public\icons8-coin-48.png" className="" />
+        <img src="\icons8-coin-48.png" className="w-full h-auto" />
       </div>
     </div>
   );
