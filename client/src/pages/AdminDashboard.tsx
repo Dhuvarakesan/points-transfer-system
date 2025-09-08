@@ -213,7 +213,7 @@ const AdminDashboard = () => {
     const intervalId = setInterval(() => {
       dispatch(fetchUsers({}));
         dispatch(fetchAllTransactions());
-    }, 30000); // Auto-refresh every 30 seconds
+    }, 40000); // Auto-refresh every 30 seconds
 
     return () => clearInterval(intervalId);
   }, [dispatch]);
