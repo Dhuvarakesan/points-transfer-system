@@ -320,7 +320,7 @@ const UserDashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-           <ThemeToggle />
+              <ThemeToggle />
               <LogoutButtons onSessionLogout={handleLogout} />
             </div>
           </div>
@@ -340,18 +340,19 @@ const UserDashboard = () => {
                   <p className="text-4xl font-bold">
                     {lastPolledBalance?.toLocaleString() ||
                       user.nox_balance?.toLocaleString() ||
-                      0} NOX
+                      0}{" "}
+                    NOX
                   </p>
                   <Button
-                    // variant="outline"
+                    variant="secondary"
                     size="sm"
-                    className="ml-2"
-                    onClick={async() => {
-                      setIsSendingNOX(true)
-                     await dispatch(fetchUserPoints(user._id));
+                    className="bg-white/10 text-white border-white/20 hover:bg-white/20"
+                    onClick={async () => {
+                      setIsSendingNOX(true);
+                      await dispatch(fetchUserPoints(user._id));
                       await dispatch(fetchUsers({ page: 1 }));
                       await dispatch(fetchTransactions(user._id));
-                      setIsSendingNOX(false)
+                      setIsSendingNOX(false);
                     }}
                     title="Refresh Data"
                   >
@@ -767,7 +768,7 @@ const UserDashboard = () => {
         />
       )}
       {/* Show credit animation when user receives NOX */}
-      {showTransferAnimation && balanceChangeType === 'credit' && (
+      {showTransferAnimation && balanceChangeType === "credit" && (
         <CelebrationAnimation
           isUserDashboard={true}
           isVisible={true}
@@ -777,7 +778,7 @@ const UserDashboard = () => {
         />
       )}
       {/* Show debit animation when user sends NOX */}
-      {showTransferAnimation && balanceChangeType === 'debit' && (
+      {showTransferAnimation && balanceChangeType === "debit" && (
         <CelebrationAnimation
           isUserDashboard={true}
           isVisible={true}
