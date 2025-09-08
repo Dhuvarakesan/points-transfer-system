@@ -35,6 +35,7 @@ import {
 import {
   fetchUserPoints,
   fetchUsers,
+  resetAnimation,
   updateUserPoints as updateOtherUserPoints
 } from "@/store/slices/usersSlice";
 import {
@@ -46,19 +47,20 @@ import {
   Clock,
   CreditCard,
   LogOut,
+  RefreshCw,
   Search,
   Send,
   TrendingDown
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-
+import Loader from '../components/Loader';
 
 const UserDashboard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
   const { user } = useSelector((state: RootState) => state.auth);
-  const { users, showBalanceAnimation, lastPolledBalance, balanceChangeType } = useSelector((state: RootState) => state.users);
+  const { users, showBalanceAnimation, balanceChangeAmount, lastPolledBalance, balanceChangeType } = useSelector((state: RootState) => state.users);
   const { transactions, isLoading } = useSelector((state: RootState) => state.transactions);
   // Transaction filter state
   const [transactionFilter, setTransactionFilter] = useState<
@@ -76,6 +78,8 @@ const UserDashboard = () => {
   // Transaction search state
   const [transactionSearch, setTransactionSearch] = useState("");
   const [amountSearch, setAmountSearch] = useState("");
+  const [isSendingNOX, setIsSendingNOX] = useState(false);
+  const [showTransferAnimation, setShowTransferAnimation] = useState(false)
 
   // Live data state
   // Poll live data APIs every 1 minute (not every 1s, to avoid duplicate polling)
@@ -85,7 +89,7 @@ const UserDashboard = () => {
       try {
         dispatch(fetchTransactions(user._id));
         dispatch(fetchUsers({ page: 1 }));
-        // Fetch user points balance for polling/animation
+        // Fetch user NOX balance for polling/animation
         if (user?._id) {
           dispatch(fetchUserPoints(user._id));
         }
@@ -102,17 +106,12 @@ const UserDashboard = () => {
     };
   }, [dispatch, user]);
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (user?._id) {
-        dispatch(fetchUserPoints(user._id));
-      }
-    }, 30000); // Poll every 30 seconds
 
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [dispatch, user]);
+  useEffect(()=>{
+    if(showBalanceAnimation){
+  setShowTransferAnimation(true)
+}
+  },[showBalanceAnimation, balanceChangeType])
 
 
 
@@ -129,19 +128,6 @@ const UserDashboard = () => {
   }, [transferAmountNum]);
 
 
-  // // Poll transactions every 1s for live updates (keep this for fast transaction updates)
-  // useEffect(() => {
-  //   let intervalId: NodeJS.Timeout | null = null;
-  //   if (user) {
-  //     dispatch(fetchTransactions(user._id));
-  //     intervalId = setInterval(() => {
-  //       // dispatch(fetchTransactions(user._id));
-  //     }, 1000);
-  //   }
-  //   return () => {
-  //     if (intervalId) clearInterval(intervalId);
-  //   };
-  // }, [dispatch, user]);
 
 
 
@@ -195,6 +181,9 @@ const UserDashboard = () => {
   });
 
   const handleTransfer = async () => {
+
+    setIsSendingNOX(true); // Show loader
+  
     // console.log("transfer", transfer, user);
     if (!user || transferAmountNum <= 0 || !selectedRecipient?._id) {
       toast({
@@ -202,6 +191,7 @@ const UserDashboard = () => {
         description: "Please fill all fields correctly",
         variant: "destructive",
       });
+      setIsSendingNOX(false); // Hide loader
       return;
     }
 
@@ -211,6 +201,7 @@ const UserDashboard = () => {
         description: "Insufficient balance",
         variant: "destructive",
       });
+      setIsSendingNOX(false); // Hide loader
       return;
     }
 
@@ -222,8 +213,10 @@ const UserDashboard = () => {
         description: "Receiver not found",
         variant: "destructive",
       });
+      setIsSendingNOX(false); // Hide loader
       return;
     }
+        setIsTransferDialogOpen(false)
 
     try {
       await dispatch(
@@ -243,6 +236,8 @@ const UserDashboard = () => {
         })
       );
 
+     await dispatch( fetchTransactions(user._id))
+
       setIsTransferDialogOpen(false);
       setTransferAmount("");
       setSelectedRecipient(null);
@@ -250,7 +245,7 @@ const UserDashboard = () => {
       setShowBalancePreview(false);
       toast({
         title: "Transfer Successful",
-        description: `${transferAmountNum} points sent to ${selectedRecipient.name}`,
+        description: `${transferAmountNum} NOX sent to ${selectedRecipient.name}`,
       });
     } catch (error) {
       toast({
@@ -258,6 +253,8 @@ const UserDashboard = () => {
         description: "Transfer failed",
         variant: "destructive",
       });
+    } finally {
+      setIsSendingNOX(false); // Hide loader
     }
   };
 
@@ -273,9 +270,27 @@ const UserDashboard = () => {
     dispatch(logoutUser());
   };
 
+  // Animation timing effect
+  useEffect(() => {
+    if (showTransferAnimation) {
+      const timer = setTimeout(() => {
+        setShowTransferAnimation(false);
+        dispatch(resetAnimation());
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [showTransferAnimation, dispatch]);
+
+  useEffect(() => {
+    if (isTransferDialogOpen) {
+      dispatch(fetchUserPoints(user._id));
+    }
+  }, [isTransferDialogOpen]);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
+      {isSendingNOX && <Loader />}
       <header className="border-b bg-card shadow-soft">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -291,14 +306,12 @@ const UserDashboard = () => {
               <div className="">
                 <h1 className="text-2xl font-bold hidden sm:block">
                   ASCENSION
-
                 </h1>
                 {/* <p className="text-sm text-muted-foreground">
-                  Manage your points and transfers
+                  Manage your NOX and transfers
                 </p> */}
                 <span className="text-sm text-muted-foreground">
                   {user?.name}
-
                 </span>
               </div>
             </div>
@@ -325,9 +338,28 @@ const UserDashboard = () => {
                 <p className="text-white/80 text-sm font-medium mb-2">
                   Current Balance
                 </p>
-                <p className="text-4xl font-bold mb-4">
-                  {user.nox_balance?.toLocaleString() || 0} Points
-                </p>
+                <div className="flex flex-row gap-2 items-center mb-4">
+                  <p className="text-4xl font-bold">
+                    {lastPolledBalance?.toLocaleString() ||
+                      user.nox_balance?.toLocaleString() ||
+                      0} NOX
+                  </p>
+                  <Button
+                    // variant="outline"
+                    size="sm"
+                    className="ml-2"
+                    onClick={async() => {
+                      setIsSendingNOX(true)
+                     await dispatch(fetchUserPoints(user._id));
+                      await dispatch(fetchUsers({ page: 1 }));
+                      await dispatch(fetchTransactions(user._id));
+                      setIsSendingNOX(false)
+                    }}
+                    title="Refresh Data"
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                  </Button>
+                </div>
                 <div className="flex items-center space-x-4 text-sm text-white/80">
                   <span className="flex items-center">
                     <ArrowUpRight className="w-4 h-4 mr-1" />
@@ -351,17 +383,17 @@ const UserDashboard = () => {
                       className="bg-white/10 text-white border-white/20 hover:bg-white/20"
                     >
                       <Send className="w-4 h-4" />
-                      Send Points
+                      Send NOX
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="w-full max-w-xs sm:max-w-md">
                     <DialogHeader>
                       <DialogTitle className="flex items-center space-x-2">
                         <Send className="w-5 h-5" />
-                        <span>Send Points</span>
+                        <span>Send NOX</span>
                       </DialogTitle>
                       <DialogDescription>
-                        Transfer points to another user securely
+                        Transfer NOX to another user securely
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-6">
@@ -375,7 +407,9 @@ const UserDashboard = () => {
                             </span>
                           </div>
                           <span className="text-lg font-bold">
-                            {user?.nox_balance?.toLocaleString()} pts
+                            {lastPolledBalance?.toLocaleString() ||
+                              user.nox_balance?.toLocaleString()}{" "}
+                            pts
                           </span>
                         </div>
 
@@ -465,7 +499,8 @@ const UserDashboard = () => {
                                     </div>
                                   </div>
                                   <Badge variant="secondary">
-                                    {(user.nox_balance ?? 0).toLocaleString()} pts
+                                    {(user.nox_balance ?? 0).toLocaleString()}{" "}
+                                    pts
                                   </Badge>
                                 </div>
                               </div>
@@ -490,7 +525,7 @@ const UserDashboard = () => {
                             value={transferAmount}
                             onChange={(e) => setTransferAmount(e.target.value)}
                             min="1"
-                            max={user?.nox_balance || 0}
+                            max={lastPolledBalance || user?.nox_balance || 0}
                             className="pr-12"
                           />
                           <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-muted-foreground">
@@ -498,8 +533,10 @@ const UserDashboard = () => {
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Maximum: {user?.nox_balance?.toLocaleString()}{" "}
-                          points
+                          Maximum:{" "}
+                          {lastPolledBalance?.toLocaleString() ||
+                            user?.nox_balance?.toLocaleString()}{" "}
+                          NOX
                         </div>
                       </div>
 
@@ -519,7 +556,7 @@ const UserDashboard = () => {
                           variant="gradient"
                         >
                           <Send className="w-4 h-4 mr-2" />
-                          Send Points
+                          Send NOX
                         </Button>
                       </div>
                     </div>
@@ -539,7 +576,9 @@ const UserDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {sentTransactions.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
+                {sentTransactions
+                  .reduce((sum, t) => sum + t.amount, 0)
+                  .toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
                 {sentTransactions.length} transactions
@@ -556,7 +595,9 @@ const UserDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {receivedTransactions.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
+                {receivedTransactions
+                  .reduce((sum, t) => sum + t.amount, 0)
+                  .toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground">
                 {receivedTransactions.length} transactions
@@ -581,9 +622,9 @@ const UserDashboard = () => {
         </div>
 
         {/* Transaction History */}
-        <Card className="shadow-medium">
+        <Card className="shadow-medium !sticky !top-0">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 w-full ">
               <div className="flex items-center space-x-2">
                 <CardTitle className="flex items-center space-x-2">
                   <Clock className="w-5 h-5" />
@@ -598,7 +639,6 @@ const UserDashboard = () => {
                       e.target.value as "all" | "sent" | "received"
                     )
                   }
-
                 >
                   <option value="all">All</option>
                   <option value="sent">Sent</option>
@@ -621,7 +661,6 @@ const UserDashboard = () => {
                 placeholder="Search by amount"
                 value={amountSearch}
                 onChange={(e) => setAmountSearch(e.target.value)}
-
                 style={{ minWidth: 120 }}
               />
             </div>
@@ -651,62 +690,68 @@ const UserDashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTransactions.map((transaction) => {
-                      const isSent = transaction.senderId === user._id;
-                      return (
-                        <TableRow key={transaction._id}>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              {isSent ? (
-                                <ArrowUpRight className="w-4 h-4 text-destructive" />
-                              ) : (
-                                <ArrowDownLeft className="w-4 h-4 text-success" />
-                              )}
+                    {filteredTransactions
+                      .sort(
+                        (a, b) =>
+                          new Date(b.timestamp).getTime() -
+                          new Date(a.timestamp).getTime()
+                      )
+                      .map((transaction) => {
+                        const isSent = transaction.senderId === user._id;
+                        return (
+                          <TableRow key={transaction._id}>
+                            <TableCell>
+                              <div className="flex items-center space-x-2">
+                                {isSent ? (
+                                  <ArrowUpRight className="w-4 h-4 text-destructive" />
+                                ) : (
+                                  <ArrowDownLeft className="w-4 h-4 text-success" />
+                                )}
+                                <span
+                                  className={
+                                    isSent ? "text-destructive" : "text-success"
+                                  }
+                                >
+                                  {isSent ? "Sent" : "Received"}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {isSent
+                                ? transaction.receiverName
+                                : transaction.senderName}
+                            </TableCell>
+                            <TableCell className="font-medium">
                               <span
                                 className={
                                   isSent ? "text-destructive" : "text-success"
                                 }
                               >
-                                {isSent ? "Sent" : "Received"}
+                                {isSent ? "-" : "+"}
+                                {transaction.amount} NOX
                               </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {isSent
-                              ? transaction.receiverName
-                              : transaction.senderName}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            <span
-                              className={
-                                isSent ? "text-destructive" : "text-success"
-                              }
-                            >
-                              {isSent ? "-" : "+"}
-                              {transaction.amount} points
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            {new Date(
-                              transaction.timestamp
-                            ).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                transaction.status === "completed"
-                                  ? "default"
-                                  : transaction.status === "pending"
-                                  ? "secondary"
-                                  : "destructive"
-                              }
-                            >
-                              {transaction.status}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(
+                                transaction.timestamp
+                              ).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  transaction.status === "completed"
+                                    ? "default"
+                                    : transaction.status === "pending"
+                                    ? "secondary"
+                                    : "destructive"
+                                }
+                              >
+                                {transaction.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                   </TableBody>
                 </Table>
               </div>
@@ -720,17 +765,27 @@ const UserDashboard = () => {
           isUserDashboard={true}
           isVisible={true}
           onComplete={handleCelebrationComplete}
-          noxAdded={user?.nox_balance || 0}
+          changeType={undefined} // No credit/debit, triggers welcome
         />
       )}
-      {showBalanceAnimation && (
+      {/* Show credit animation when user receives NOX */}
+      {showTransferAnimation && balanceChangeType === 'credit' && (
         <CelebrationAnimation
           isUserDashboard={true}
           isVisible={true}
-          onComplete={() => {}}
-          noxAdded={lastPolledBalance || user?.nox_balance || 0}
+          onComplete={() => setShowTransferAnimation(false)}
           changeType={balanceChangeType}
-
+          pointsAdded={balanceChangeAmount}
+        />
+      )}
+      {/* Show debit animation when user sends NOX */}
+      {showTransferAnimation && balanceChangeType === 'debit' && (
+        <CelebrationAnimation
+          isUserDashboard={true}
+          isVisible={true}
+          onComplete={() => setShowTransferAnimation(false)}
+          changeType={balanceChangeType}
+          pointsAdded={balanceChangeAmount}
         />
       )}
     </div>

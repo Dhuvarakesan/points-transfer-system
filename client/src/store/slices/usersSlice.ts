@@ -109,29 +109,36 @@ const usersSlice = createSlice({
         user.nox_balance = action.payload.nox_balance;
       }
     },
+    resetAnimation: (state) => {
+      state.showBalanceAnimation = false;
+      state.balanceChangeType = undefined;
+      state.balanceChangeAmount = undefined;
+    },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchUserPoints.fulfilled, (state, action) => {
-        console.log('payload:',action.payload)
-        if (state.lastPolledBalance !== null && action.payload !== state.lastPolledBalance) {
-          state.showBalanceAnimation = true;
-          state.balanceChangeType = action.payload > state.lastPolledBalance ? 'credit' : 'debit';
-          state.balanceChangeAmount = Math.abs(action.payload - state.lastPolledBalance);
-        } else {
-          state.showBalanceAnimation = false;
-          state.balanceChangeType = undefined;
-          state.balanceChangeAmount = undefined;
-        }
+        const newBalance = action.payload;
+        const prevBalance = state.lastPolledBalance;
 
-        // Ensure lastPolledBalance is set correctly during login
-        if (state.lastPolledBalance === null) {
-          state.showBalanceAnimation = false;
-          state.balanceChangeType = undefined;
-          state.balanceChangeAmount = undefined;
+        if (prevBalance !== null && newBalance !== prevBalance) {
+          const isCredit = newBalance > prevBalance;
+          const changeAmount = Math.abs(newBalance - prevBalance);
+
+          state.showBalanceAnimation = true;
+          state.balanceChangeType = isCredit ? 'credit' : 'debit';
+          state.balanceChangeAmount = changeAmount;
+        } else {
+
+            state.showBalanceAnimation = false;
+            state.balanceChangeType = undefined;
+            state.balanceChangeAmount = undefined;
+
+          
         }
-        state.lastPolledBalance = action.payload;
+        state.lastPolledBalance = newBalance;
       })
+
       .addCase(fetchUsers.pending, (state) => {
         state.isLoading = true;
       })
@@ -146,8 +153,11 @@ const usersSlice = createSlice({
       })
       .addCase(createUser.fulfilled, (state, action) => {
         if (action.payload.success) {
-          state.users.push(action.payload.data);
-          state.totalUsers += 1;
+          const existingUser = state.users.find(user => user._id === action.payload.data._id);
+          if (!existingUser) {
+            state.users.push(action.payload.data);
+            state.totalUsers += 1;
+          }
         }
       })
       .addCase(updateUser.fulfilled, (state, action) => {
@@ -179,5 +189,6 @@ const usersSlice = createSlice({
   },
 });
 
-export const { setSearchTerm, setCurrentPage, updateUserPoints } = usersSlice.actions;
+export const { setSearchTerm, setCurrentPage, updateUserPoints, resetAnimation } = usersSlice.actions;
 export default usersSlice.reducer;
+

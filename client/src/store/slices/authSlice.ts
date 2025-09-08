@@ -50,7 +50,10 @@ export const loginUser = createAsyncThunk(
 
 export const logoutUser = createAsyncThunk('auth/logout', async () => {
   // logger.info('User logout');
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('root')
   localStorage.clear(); // Clear all data in local storage
+
 });
 
 export const refreshToken = createAsyncThunk(
