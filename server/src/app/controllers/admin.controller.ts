@@ -1,12 +1,10 @@
 import CryptoJS from 'crypto-js';
 import { Request, Response } from 'express';
+import { defaultUsers } from '../../config/config';
 import Transaction from '../models/transactions.model';
 import User from '../models/users.model';
 
-const DEFAULT_PROTECTED_EMAILS = [
-  'admin@admin.com', // change to your actual default admin email
-  'user@user.com'    // change to your actual default user email
-];
+const DEFAULT_PROTECTED_EMAILS = defaultUsers
 
 const createUser = async (req: Request, res: Response) => {
   try {
@@ -33,7 +31,7 @@ const createUser = async (req: Request, res: Response) => {
     if (error.code === 11000 && error.keyPattern?.email) {
       return res.status(400).json({ success: false, message: 'Email is already registered.', error });
     }
-    res.status(500).json({ success: false, message: 'Internal server error', error });
+    res.status(500).json({ success: false, error });
   }
 };
 
@@ -42,7 +40,7 @@ const listUsers = async (req: Request, res: Response) => {
     const users = await User.find();
     res.status(200).json({ success: true, message: 'Users fetched successfully.', data: users });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Internal server error', error });
+    res.status(500).json({ success: false, error });
   }
 };
 
@@ -102,8 +100,12 @@ const updateUser = async (req: Request, res: Response) => {
       updates.password = CryptoJS.AES.encrypt(updates.password, secret).toString();
     }
     const user = await User.findByIdAndUpdate(id, updates, { new: true });
+
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+         if (DEFAULT_PROTECTED_EMAILS.includes(user.email)) {
+      return res.status(403).json({ success: false, message: 'Cannot Update default account.' });
     }
     res.status(200).json({ success: true, message: 'User updated successfully.', data: user });
   } catch (error) {
