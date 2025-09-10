@@ -767,18 +767,8 @@ const UserDashboard = () => {
           changeType={undefined} // No credit/debit, triggers welcome
         />
       )}
-      {/* Show credit animation when user receives NOX */}
-      {showTransferAnimation && balanceChangeType === "credit" && (
-        <CelebrationAnimation
-          isUserDashboard={true}
-          isVisible={true}
-          onComplete={() => setShowTransferAnimation(false)}
-          changeType={balanceChangeType}
-          pointsAdded={balanceChangeAmount}
-        />
-      )}
-      {/* Show debit animation when user sends NOX */}
-      {showTransferAnimation && balanceChangeType === "debit" && (
+
+      {showTransferAnimation && (
         <CelebrationAnimation
           isUserDashboard={true}
           isVisible={true}
