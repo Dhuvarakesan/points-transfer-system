@@ -768,7 +768,7 @@ const UserDashboard = () => {
         />
       )}
 
-      {showTransferAnimation && (
+{/*       {showTransferAnimation && (
         <CelebrationAnimation
           isUserDashboard={true}
           isVisible={true}
@@ -776,7 +776,7 @@ const UserDashboard = () => {
           changeType={balanceChangeType}
           pointsAdded={balanceChangeAmount}
         />
-      )}
+      )} */}
       <SessionTimeoutDialog onLogout={handleLogout} timeoutMinutes={5} />
     </div>
   );
