@@ -1,4 +1,5 @@
 import CelebrationAnimation from "@/components/CelebrationAnimation";
+import Loader from "@/components/Loader";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   AlertDialog,
@@ -95,6 +96,7 @@ const AdminDashboard = () => {
   const transactions = Array.isArray(transactionsFromState) ? transactionsFromState : [];
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [showLoading, setShowLoading] = useState(false);
   const [isAddNOXDialogOpen, setIsAddNOXDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [NOXToAdd, setNOXToAdd] = useState(0);
@@ -195,7 +197,7 @@ const AdminDashboard = () => {
       setEditUser(null);
       toast({ title: "Success", description: "User Update Succesfully" });
     } else {
-      const errorMsg ="Failed to update user";
+      const errorMsg =result?.payload?.message || "Failed to update user";
       toast({
         title: "Error",
         description: errorMsg,
@@ -232,7 +234,7 @@ const AdminDashboard = () => {
 
   const handleCreateUser = async () => {
     // Encrypt password before sending
-    
+    setShowLoading(true);
     const result = await dispatch(createUser({ ...newUser, status: newUser.status as "active" | "inactive" }));
     if (createUser.fulfilled.match(result) && result.payload.success) {
       setIsCreateDialogOpen(false);
@@ -244,23 +246,36 @@ const AdminDashboard = () => {
         status: "active",
         password: "",
       });
+      setShowLoading(false);
       toast({ title: "Success", description: result.payload.message });
     } else {
-      const errorMsg = result.payload?.message || "Failed to create user";
+      // console.log("result.payload:",result.payload?.message?result.payload?.message:result.payload?.error?.message?result.payload?.error.message:'sample');
+      const errorMsg = result.payload?.message?result.payload?.message:result.payload?.error?.message?result.payload?.error.message : "Failed to create user"
       toast({
         title: "Error",
         description: errorMsg,
         variant: "destructive",
       });
     }
+    setShowLoading(false);
   };
 
   const handleDeleteUser = async () => {
     if (userToDelete) {
       try {
-        await dispatch(deleteUser(userToDelete));
+        setShowLoading(true);
+        const response = await dispatch(deleteUser(userToDelete));
+        console.log("response:",response);
+        if(response.meta.requestStatus === 'rejected'){
+         setShowLoading(false);
+          toast({ title: "Error", description: response.payload.response.data.message, variant: "destructive" });
+          return;
+        }
+        setShowLoading(false);
         toast({ title: "Success", description: "User deleted successfully" });
+        
       } catch (error) {
+        console.log("error:while deleting user:",error);
         toast({
           title: "Error",
           description: "Failed to delete user",
@@ -269,7 +284,9 @@ const AdminDashboard = () => {
       }
       setDeleteDialogOpen(false);
       setUserToDelete(null);
+      setShowLoading(false);
     }
+   
   };
 
   const openDeleteDialog = (userId: string) => {
@@ -287,28 +304,40 @@ const AdminDashboard = () => {
   const handlePointsOperation = async () => {
     if (selectedUser && NOXToAdd > 0) {
       try {
+        setShowLoading(true); // Show loader
         const points = operationType === 'add' ? NOXToAdd : -NOXToAdd;
+        if(operationType === 'subtract' && (selectedUser.nox_balance-NOXToAdd)<0){
+          toast({
+            title: 'Error',
+            description: `Cannot subtract ${NOXToAdd} NOX from ${selectedUser.name} as it would result in negative balance.`,
+            variant: 'destructive',
+          });
+          return;
+        }
         await dispatch(
           addPointsToUser({ userId: selectedUser._id, points })
         );
         setIsAddNOXDialogOpen(false);
-        console.log('points test1:',NOXToAdd)
         setCelebrationNOX(NOXToAdd);
-        setShowCelebration(operationType === 'add');
+        setShowLoading(false)
+        setShowCelebration(true);
         toast({
           title: 'Success',
-          description: `${operationType === 'add' ? 'Added' : 'Subtracted'} ${NOXToAdd} points to ${selectedUser.name}`,
+          description: `${operationType === 'add' ? 'Added' : 'Subtracted'} ${NOXToAdd} NOX to ${selectedUser.name}`,
         });
         // Refresh users data
         await dispatch(fetchUsers({}));
         setSelectedUser(null);
         setNOXToAdd(0);
       } catch (error) {
+        console.log("error:while nox adding:",error);
         toast({
           title: 'Error',
-          description: `Failed to ${operationType} points`,
+          description: `Failed to ${operationType} NOX`,
           variant: 'destructive',
         });
+      } finally {
+        setShowLoading(false); // Hide loader
       }
     }
   };
@@ -332,6 +361,7 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
+      {showLoading&& <Loader />}
       <header className="border-b bg-card shadow-soft">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -972,6 +1002,7 @@ const AdminDashboard = () => {
         isVisible={showCelebration}
         onComplete={() => setShowCelebration(false)}
         pointsAdded={celebrationNOX}
+        changeType={operationType==='add'?'credit':'debit'}
       />
     </div>
   );
