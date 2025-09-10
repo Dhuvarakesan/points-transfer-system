@@ -78,17 +78,25 @@ export const addPointsToUser = createAsyncThunk(
 
 export const updateUser = createAsyncThunk(
   'users/updateUser',
-  async ({ _id, ...updates }: Partial<User> & { _id: string }) => {
+  async ({ _id, ...updates }: Partial<User> & { _id: string ,},{ rejectWithValue }) => {
+    try{
     const response = await editUser(_id, updates);
     return { _id, updates: response.data.data };
+    }catch(error){
+      return rejectWithValue(error.response.data);
+    }
   }
 );
 
 export const deleteUser = createAsyncThunk(
   'users/deleteUser',
-  async (userId: string) => {
+  async (userId: string,  { rejectWithValue }) => {
+    try{
     const response = await deleteUserAPI(userId);
     return response.data;
+    }catch(error){
+      return rejectWithValue(error);
+    }
   }
 );
 
