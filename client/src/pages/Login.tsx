@@ -163,7 +163,7 @@ const Login = () => {
         </Card>
 
         {/* Demo Credentials */}
-        <Card className="shadow-medium">
+        <Card className="shadow-medium hidden">
           <CardHeader>
             <CardTitle className="text-lg">Demo Credentials</CardTitle>
             <CardDescription>

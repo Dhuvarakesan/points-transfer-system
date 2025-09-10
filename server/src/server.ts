@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import express, { Express, NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import morgan from "morgan";
+import { protect } from "./app/middleware/middleware";
 import adminRoutes from './app/routes/admin.routes'; // Import the admin routes
 import publicRoutes from "./app/routes/public.routes";
 import userRoutes from './app/routes/user.routes';
@@ -26,8 +27,8 @@ connectDB();
 // Routes for public api without authentication
 app.use(publicRoutes);
 // Routes for protected api with authentication
-app.use('/admin', adminRoutes);
-app.use('/users', userRoutes);
+app.use('/admin',protect,adminRoutes);
+app.use('/users',protect, userRoutes);
 
 // Root route
 // app.get("/", (req: Request, res: Response) => {

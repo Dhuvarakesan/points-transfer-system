@@ -4,9 +4,9 @@ import React from "react";
 const ThemeToggle: React.FC = () => {
   const [theme, setTheme] = React.useState<"light" | "dark">(() => {
     if (typeof window !== "undefined") {
-      return (localStorage.getItem("theme") as "light" | "dark") || "light";
+      return (localStorage.getItem("theme") as "light" | "dark") || "dark"; // Default theme set to dark
     }
-    return "light";
+    return "dark"; // Default theme set to dark
   });
 
   React.useEffect(() => {
