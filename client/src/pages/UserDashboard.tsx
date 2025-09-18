@@ -1,6 +1,5 @@
 import CelebrationAnimation from "@/components/CelebrationAnimation";
 import LogoutButtons from "@/components/LogoutButtons";
-import SessionTimeoutDialog from "@/components/SessionTimeoutDialog";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -777,7 +776,7 @@ const UserDashboard = () => {
           pointsAdded={balanceChangeAmount}
         />
       )} */}
-      <SessionTimeoutDialog onLogout={handleLogout} timeoutMinutes={5} />
+      {/* <SessionTimeoutDialog onLogout={handleLogout} timeoutMinutes={5} /> */}
     </div>
   );
 };
